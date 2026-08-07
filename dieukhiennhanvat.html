@@ -2,591 +2,1007 @@
 <html lang="vi">
 
 <head>
-
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>Game nhân vật ăn đồ ăn</title>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Khỉ sinh tồn - Ăn chuối, uống Sting, đấu rắn</title>
 
     <style>
+        /* ===================== RESET CƠ BẢN ===================== */
+        
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
         
         body {
             overflow: hidden;
-            background: linear-gradient(#8be9fd, #50c878);
-            font-family: Arial;
+            background: linear-gradient(#8be9fd, #4caf6a);
+            font-family: Arial, sans-serif;
             touch-action: none;
+            user-select: none;
         }
         
         #game {
             width: 100vw;
             height: 100vh;
             position: relative;
+            overflow: hidden;
         }
-        /* Nhân vật */
+        /* ===================== NHÂN VẬT KHỈ ===================== */
         
         #player {
             position: absolute;
             left: 100px;
             top: 100px;
+            z-index: 5;
+            transition: filter .2s;
         }
         
         .avatar {
-            width: 100px;
-            height: 100px;
+            display: block;
+            width: 90px;
+            height: 90px;
             border-radius: 50%;
             object-fit: cover;
-            border: 4px solid white;
-            transition: 0.2s;
+            border: 4px solid #fff;
+            background: #d8b06a;
+            /* nền dự phòng nếu ảnh chưa tải được */
         }
-        /* Hiệu ứng ăn */
+        /* đi bộ: lắc nhẹ qua lại để tạo cảm giác di chuyển */
+        
+        .walking .avatar {
+            animation: walkBob .32s infinite alternate;
+        }
+        
+        @keyframes walkBob {
+            from {
+                transform: rotate(-6deg) translateY(0);
+            }
+            to {
+                transform: rotate(6deg) translateY(-3px);
+            }
+        }
+        /* hiệu ứng ăn chuối: phóng to + phát sáng + rung nhẹ */
         
         .eat-effect {
-            animation: eat 0.35s;
-            box-shadow: 0 0 20px yellow, 0 0 40px orange;
+            animation: eatPop .4s ease;
         }
         
-        @keyframes eat {
+        @keyframes eatPop {
             0% {
                 transform: scale(1);
+                filter: drop-shadow(0 0 0px gold);
             }
             30% {
-                transform: scale(1.35) rotate(10deg);
+                transform: scale(1.4) rotate(8deg);
+                filter: drop-shadow(0 0 20px gold) drop-shadow(0 0 35px orange);
             }
             60% {
-                transform: scale(1.15) rotate(-10deg);
+                transform: scale(1.15) rotate(-6deg);
+                filter: drop-shadow(0 0 10px gold);
             }
             100% {
                 transform: scale(1);
+                filter: drop-shadow(0 0 0px transparent);
             }
         }
-        /* Đồ ăn */
+        /* hiệu ứng va chạm vật cản: rung + đỏ nhẹ */
         
-        .food {
-            position: absolute;
-            font-size: 50px;
-            animation: bounce .8s infinite alternate;
+        .hit-effect {
+            animation: hitShake .3s ease;
         }
         
-        @keyframes bounce {
+        @keyframes hitShake {
+            0% {
+                transform: translateX(0);
+                filter: brightness(1);
+            }
+            25% {
+                transform: translateX(-8px);
+                filter: brightness(.6) saturate(2) hue-rotate(-20deg);
+            }
+            50% {
+                transform: translateX(8px);
+            }
+            75% {
+                transform: translateX(-4px);
+            }
+            100% {
+                transform: translateX(0);
+                filter: brightness(1);
+            }
+        }
+        /* hiệu ứng uống Sting: viền đỏ phát sáng trong 10 giây */
+        
+        .sting-boost .avatar {
+            border-color: #ff3b3b;
+            box-shadow: 0 0 18px 6px rgba(255, 50, 50, .85), 0 0 36px 12px rgba(255, 120, 0, .5);
+            animation: stingPulse .5s infinite alternate;
+        }
+        
+        @keyframes stingPulse {
             from {
-                transform: scale(1);
+                filter: brightness(1);
             }
             to {
-                transform: scale(1.2);
+                filter: brightness(1.35);
             }
         }
-        /* Điểm */
+        /* ===================== CHUỐI ===================== */
         
-        .info {
+        .banana {
             position: absolute;
-            top: 15px;
-            left: 15px;
-            background: white;
-            padding: 12px;
-            border-radius: 15px;
-            font-size: 18px;
-            z-index: 10;
+            font-size: 42px;
+            z-index: 3;
+            animation: bananaBounce .9s infinite alternate;
+            filter: drop-shadow(0 3px 2px rgba(0, 0, 0, .3));
         }
-        /* Điều khiển */
+        
+        @keyframes bananaBounce {
+            from {
+                transform: scale(1) rotate(-8deg);
+            }
+            to {
+                transform: scale(1.15) rotate(8deg);
+            }
+        }
+        /* ===================== STING (chai năng lượng) ===================== */
+        
+        #sting {
+            position: absolute;
+            width: 46px;
+            height: 46px;
+            z-index: 3;
+            animation: stingSpin 1.6s infinite ease-in-out alternate;
+            filter: drop-shadow(0 0 8px rgba(255, 60, 60, .8));
+        }
+        
+        @keyframes stingSpin {
+            from {
+                transform: rotate(-10deg) translateY(0);
+            }
+            to {
+                transform: rotate(10deg) translateY(-6px);
+            }
+        }
+        /* ===================== CHƯỚNG NGẠI VẬT ===================== */
+        
+        .obstacle {
+            position: absolute;
+            font-size: 46px;
+            z-index: 2;
+            filter: drop-shadow(0 3px 3px rgba(0, 0, 0, .35));
+        }
+        /* ===================== RẮN ===================== */
+        
+        #snake {
+            position: absolute;
+            font-size: 54px;
+            z-index: 4;
+            display: none;
+            filter: drop-shadow(0 3px 4px rgba(0, 0, 0, .4));
+            animation: snakeWiggle .25s infinite alternate;
+        }
+        
+        @keyframes snakeWiggle {
+            from {
+                transform: rotate(-8deg);
+            }
+            to {
+                transform: rotate(8deg);
+            }
+        }
+        /* ===================== HIỆU ỨNG BÙNG NỔ / ÁNH SÁNG DÙNG CHUNG ===================== */
+        
+        .spark {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 6;
+            animation: sparkGrow .5s ease forwards;
+        }
+        
+        @keyframes sparkGrow {
+            from {
+                transform: scale(.3);
+                opacity: 1;
+            }
+            to {
+                transform: scale(3.2);
+                opacity: 0;
+            }
+        }
+        /* ===================== HUD ===================== */
+        
+        .hud {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            background: rgba(255, 255, 255, .92);
+            padding: 10px 14px;
+            border-radius: 14px;
+            font-size: 15px;
+            line-height: 1.55;
+            z-index: 20;
+            min-width: 170px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, .15);
+        }
+        
+        .hud b {
+            color: #333;
+        }
+        
+        .power-bar-outer {
+            margin-top: 4px;
+            width: 100%;
+            height: 8px;
+            background: #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        
+        .power-bar-inner {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #ffb347, #ff3b3b);
+            transition: width .25s;
+        }
+        /* ===================== ĐIỀU KHIỂN CẢM ỨNG ===================== */
         
         .controls {
             position: absolute;
-            bottom: 30px;
+            bottom: 26px;
             left: 50%;
             transform: translateX(-50%);
             display: grid;
-            grid-template-columns: 70px 70px 70px;
-            gap: 10px;
+            grid-template-columns: 64px 64px 64px;
+            gap: 8px;
             z-index: 20;
         }
         
         .controls button {
-            width: 70px;
-            height: 70px;
+            width: 64px;
+            height: 64px;
             border: none;
             border-radius: 50%;
             background: #6a11cb;
-            color: white;
-            font-size: 30px;
+            color: #fff;
+            font-size: 26px;
+            opacity: .85;
         }
         
         .controls button:active {
             background: #2575fc;
-            transform: scale(.9);
+            transform: scale(.92);
         }
         
         .empty {
             visibility: hidden;
         }
+        /* ===================== MÀN HÌNH KẾT THÚC ===================== */
         
-        @media(max-width:600px) {
+        #overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, .72);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            z-index: 50;
+            text-align: center;
+            color: #fff;
+            padding: 20px;
+        }
+        
+        #overlay h1 {
+            font-size: 42px;
+            margin-bottom: 14px;
+        }
+        
+        #overlay p {
+            font-size: 17px;
+            margin-bottom: 20px;
+            opacity: .9;
+        }
+        
+        #overlay button {
+            padding: 12px 26px;
+            font-size: 17px;
+            border: none;
+            border-radius: 30px;
+            background: #ffb347;
+            color: #222;
+            font-weight: bold;
+        }
+        /* cảnh báo rắn xuất hiện */
+        
+        #warning {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(200, 0, 0, .9);
+            color: #fff;
+            padding: 10px 22px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            z-index: 30;
+            display: none;
+            animation: warningBlink .5s infinite alternate;
+        }
+        
+        @keyframes warningBlink {
+            from {
+                opacity: 1;
+            }
+            to {
+                opacity: .4;
+            }
+        }
+        /* ===================== ĐIỆN THOẠI: THU NHỎ MỌI THỨ ===================== */
+        
+        @media (max-width: 600px) {
             .avatar {
-                width: 80px;
-                height: 80px;
-            }
-            .food {
-                font-size: 40px;
-            }
-            .controls button {
                 width: 60px;
                 height: 60px;
             }
+            .banana {
+                font-size: 30px;
+            }
+            .obstacle {
+                font-size: 32px;
+            }
+            #sting {
+                width: 34px;
+                height: 34px;
+            }
+            #snake {
+                font-size: 40px;
+            }
+            .hud {
+                font-size: 12px;
+                padding: 8px 10px;
+                min-width: 130px;
+            }
+            .controls button {
+                width: 52px;
+                height: 52px;
+                font-size: 22px;
+            }
             .controls {
-                grid-template-columns: 60px 60px 60px;
+                grid-template-columns: 52px 52px 52px;
+            }
+            #overlay h1 {
+                font-size: 30px;
             }
         }
     </style>
-
-
 </head>
-
-
 
 <body>
 
-
     <div id="game">
 
-
-
-        <div class="info">
-
-            🍎 Điểm:
-            <span id="score">0</span>
-
-            <br> 📏 Kích thước:
-            <span id="sizeText">100</span>
-
-            <br> Di chuyển ăn táo
-
+        <!-- HUD hiển thị thông tin người chơi -->
+        <div class="hud">
+            🍌 Chuối đã ăn: <b id="hudBanana">0</b><br> 💪 Sức mạnh: <b id="hudPower">0</b> / 5000<br>
+            <div class="power-bar-outer">
+                <div class="power-bar-inner" id="powerBar"></div>
+            </div>
+            ⚡ Tốc độ: <b id="hudSpeed">5</b><br> 🐍 Máu rắn: <b id="hudSnakeHp">--</b>
         </div>
 
+        <!-- Cảnh báo khi rắn xuất hiện -->
+        <div id="warning">⚠️ Rắn khổng lồ xuất hiện! ⚠️</div>
 
-
-
+        <!-- Nhân vật khỉ -->
         <div id="player">
-
-            <img class="avatar" src="monkey-3614f.webp">
-
+            <img class="avatar" src="monkey-3614f.webp" alt="khỉ">
         </div>
 
+        <!-- Vật phẩm và chướng ngại vật được JS sinh ra -->
+        <div id="bananas"></div>
+        <div id="obstacles"></div>
+        <img id="sting" src="sting.png" alt="sting">
+        <div id="snake">🐍</div>
 
-
-
-
-        <div id="food" class="food">
-
-            🍎
-
-        </div>
-
-
-
-
-
+        <!-- Nút điều khiển cho điện thoại -->
         <div class="controls">
-
-
             <div class="empty"></div>
-
             <button id="up">⬆️</button>
-
             <div class="empty"></div>
-
-
             <button id="left">⬅️</button>
-
             <button id="down">⬇️</button>
-
             <button id="right">➡️</button>
-
-
         </div>
 
+        <!-- Màn hình thắng / thua -->
+        <div id="overlay">
+            <h1 id="overlayTitle"></h1>
+            <p id="overlayText"></p>
+            <button id="restartBtn">🔁 Chơi lại</button>
+        </div>
 
     </div>
 
 
-
-
-
-
-
     <script>
-        const player =
-            document.getElementById("player");
+        /* =========================================================================
+           GAME: KHỈ SINH TỒN
+           - Ăn chuối để tăng sức mạnh và kích thước
+           - Uống Sting để tăng tốc độ tạm thời
+           - Né chướng ngại vật (đá / cây / tường) - va chạm vật lý thật
+           - Rắn khổng lồ truy đuổi, tốc độ tăng dần theo thời gian
+           - Sức mạnh >= 5000 mới có thể tiêu diệt rắn khi va chạm, ngược lại thua
+           ========================================================================= */
 
+        /* ---------- Tham chiếu phần tử DOM ---------- */
+        const playerEl = document.getElementById("player");
+        const avatarEl = document.querySelector(".avatar");
+        const bananasEl = document.getElementById("bananas");
+        const obstaclesEl = document.getElementById("obstacles");
+        const stingEl = document.getElementById("sting");
+        const snakeEl = document.getElementById("snake");
+        const gameEl = document.getElementById("game");
 
-        const avatar =
-            document.querySelector(".avatar");
+        const hudBanana = document.getElementById("hudBanana");
+        const hudPower = document.getElementById("hudPower");
+        const hudSpeed = document.getElementById("hudSpeed");
+        const hudSnakeHp = document.getElementById("hudSnakeHp");
+        const powerBar = document.getElementById("powerBar");
+        const warningEl = document.getElementById("warning");
 
+        const overlay = document.getElementById("overlay");
+        const overlayTitle = document.getElementById("overlayTitle");
+        const overlayText = document.getElementById("overlayText");
+        const restartBtn = document.getElementById("restartBtn");
 
-        const food =
-            document.getElementById("food");
+        /* ---------- Phát hiện điện thoại để điều chỉnh kích thước ---------- */
+        const isMobile = window.innerWidth <= 600;
 
-
-        const scoreText =
-            document.getElementById("score");
-
-
-        const sizeText =
-            document.getElementById("sizeText");
-
-
-
-
-        let x = 100;
-
-        let y = 100;
-
-
-        let speed = 5;
-
-
-        let score = 0;
-
-
-        let playerSize = 100;
-
-
-        let maxSize = 250;
-
-
-
-        let keys = {
-
-            up: false,
-
-            down: false,
-
-            left: false,
-
-            right: false
-
+        /* =========================================================================
+           1. TRẠNG THÁI NHÂN VẬT
+           ========================================================================= */
+        const player = {
+            x: 100,
+            y: 100,
+            baseSize: isMobile ? 60 : 90,
+            maxSize: isMobile ? 130 : 190,
+            size: isMobile ? 60 : 90,
+            baseSpeed: isMobile ? 4 : 5,
+            speed: isMobile ? 4 : 5,
+            power: 0, // sức mạnh, mỗi chuối +10
+            bananaCount: 0,
+            boosted: false,
+            boostEndTime: 0
         };
 
+        const WIN_POWER = 5000; // ngưỡng sức mạnh để tiêu diệt được rắn
 
+        /* phím / nút đang được nhấn */
+        const keys = {
+            up: false,
+            down: false,
+            left: false,
+            right: false
+        };
 
+        let gameOver = false;
+        let gameWon = false;
 
+        /* cờ chống spam âm thanh/hiệu ứng khi đang tựa vào vật cản */
+        let hitSoundCooldown = 0;
 
+        /* =========================================================================
+           2. ÂM THANH (tự tổng hợp bằng Web Audio API - không cần file ngoài)
+           ========================================================================= */
+        let audioCtx = null;
 
-        function randomFood() {
-
-
-            food.style.left =
-                Math.random() * (window.innerWidth - 60) + "px";
-
-
-            food.style.top =
-                Math.random() * (window.innerHeight - 60) + "px";
-
-
+        function getAudioCtx() {
+            if (!audioCtx) {
+                audioCtx = new(window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === "suspended") audioCtx.resume();
+            return audioCtx;
         }
 
+        /* tạo một tiếng bíp có cao độ thay đổi (dùng làm khối xây dựng cho các âm thanh khác) */
+        function tone(freqStart, freqEnd, duration, delay, volume, type) {
+            try {
+                const ctx = getAudioCtx();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = type || "sawtooth";
+                osc.connect(gain);
+                gain.connect(ctx.destination);
 
+                const t0 = ctx.currentTime + delay;
+                const t1 = t0 + duration;
 
-        randomFood();
+                osc.frequency.setValueAtTime(freqStart, t0);
+                osc.frequency.exponentialRampToValueAtTime(Math.max(40, freqEnd), t1);
 
+                gain.gain.setValueAtTime(0.0001, t0);
+                gain.gain.exponentialRampToValueAtTime(volume, t0 + duration * 0.25);
+                gain.gain.exponentialRampToValueAtTime(0.0001, t1);
 
+                osc.start(t0);
+                osc.stop(t1 + 0.02);
+            } catch (e) { /* trình duyệt chưa cho phép audio - bỏ qua */ }
+        }
 
+        /* tiếng khỉ kêu khi ăn chuối */
+        function soundMonkey() {
+            tone(600, 300, 0.12, 0, 0.18, "sawtooth");
+            tone(650, 320, 0.12, 0.13, 0.18, "sawtooth");
+            tone(900, 500, 0.09, 0.28, 0.15, "sawtooth");
+            tone(950, 520, 0.09, 0.39, 0.15, "sawtooth");
+        }
 
+        /* tiếng uống Sting - vụt tăng tốc */
+        function soundSting() {
+            tone(200, 1400, 0.35, 0, 0.2, "square");
+            tone(300, 1600, 0.25, 0.1, 0.15, "square");
+        }
 
+        /* tiếng va chạm vật cản */
+        function soundHit() {
+            tone(150, 60, 0.15, 0, 0.25, "square");
+        }
 
+        /* tiếng cảnh báo rắn xuất hiện */
+        function soundWarning() {
+            tone(880, 440, 0.3, 0, 0.2, "triangle");
+            tone(880, 440, 0.3, 0.35, 0.2, "triangle");
+            tone(880, 440, 0.3, 0.7, 0.2, "triangle");
+        }
 
+        /* tiếng chiến thắng khi giết rắn */
+        function soundVictory() {
+            tone(523, 523, 0.15, 0, 0.2, "triangle"); // Do
+            tone(659, 659, 0.15, 0.15, 0.2, "triangle"); // Mi
+            tone(784, 784, 0.15, 0.30, 0.2, "triangle"); // Sol
+            tone(1046, 1046, 0.3, 0.45, 0.25, "triangle"); // Do cao
+        }
 
-        function game() {
+        /* tiếng thất bại khi thua */
+        function soundGameOver() {
+            tone(300, 80, 0.6, 0, 0.25, "sawtooth");
+        }
 
+        /* =========================================================================
+           3. TIỆN ÍCH VỊ TRÍ NGẪU NHIÊN
+           ========================================================================= */
+        function randomX(size) {
+            return Math.random() * (window.innerWidth - size);
+        }
 
+        function randomY(size) {
+            return Math.random() * (window.innerHeight - size);
+        }
 
-            if (keys.up)
-                y -= speed;
+        /* khoảng cách giữa 2 điểm */
+        function dist(x1, y1, x2, y2) {
+            return Math.hypot(x1 - x2, y1 - y2);
+        }
 
+        /* =========================================================================
+           4. CHƯỚNG NGẠI VẬT (đá / cây / tường) - CÓ VA CHẠM VẬT LÝ THẬT
+           ========================================================================= */
+        const obstacleEmojis = ["🪨", "🌲", "🧱"];
+        const obstacleCount = isMobile ? 6 : 10;
+        const obstacleSize = isMobile ? 40 : 52;
+        let obstacles = [];
 
-            if (keys.down)
-                y += speed;
+        function createObstacles() {
+            for (let i = 0; i < obstacleCount; i++) {
+                const el = document.createElement("div");
+                el.className = "obstacle";
+                el.textContent = obstacleEmojis[Math.floor(Math.random() * obstacleEmojis.length)];
 
+                // tránh sinh quá gần vị trí khởi đầu của người chơi
+                let ox, oy, tries = 0;
+                do {
+                    ox = randomX(obstacleSize);
+                    oy = randomY(obstacleSize);
+                    tries++;
+                } while (dist(ox, oy, player.x, player.y) < 180 && tries < 30);
 
-            if (keys.left)
-                x -= speed;
+                el.style.left = ox + "px";
+                el.style.top = oy + "px";
 
+                obstaclesEl.appendChild(el);
+                obstacles.push({
+                    el,
+                    x: ox,
+                    y: oy,
+                    size: obstacleSize
+                });
+            }
+        }
+        createObstacles();
 
-            if (keys.right)
-                x += speed;
+        /* kiểm tra xem 1 hình vuông (px,py,psize) có chồng lên chướng ngại vật nào không */
+        function collidesObstacle(px, py, psize) {
+            for (const o of obstacles) {
+                const overlapX = px < o.x + o.size && px + psize > o.x;
+                const overlapY = py < o.y + o.size && py + psize > o.y;
+                if (overlapX && overlapY) return true;
+            }
+            return false;
+        }
 
+        /* =========================================================================
+           5. CHUỐI
+           ========================================================================= */
+        const bananaSize = isMobile ? 30 : 42;
+        const bananaCountOnMap = isMobile ? 4 : 6;
+        let bananas = [];
 
+        function spawnBananaAt(b) {
+            let bx, by, tries = 0;
+            do {
+                bx = randomX(bananaSize);
+                by = randomY(bananaSize);
+                tries++;
+            } while (collidesObstacle(bx, by, bananaSize) && tries < 30);
+            b.x = bx;
+            b.y = by;
+            b.el.style.left = bx + "px";
+            b.el.style.top = by + "px";
+        }
 
+        function createBananas() {
+            for (let i = 0; i < bananaCountOnMap; i++) {
+                const el = document.createElement("div");
+                el.className = "banana";
+                el.textContent = "🍌";
+                bananasEl.appendChild(el);
+                const b = {
+                    el,
+                    x: 0,
+                    y: 0
+                };
+                spawnBananaAt(b);
+                bananas.push(b);
+            }
+        }
+        createBananas();
 
+        /* hiệu ứng ánh sáng bùng lên tại 1 vị trí (dùng chung cho chuối/sting/rắn) */
+        function spawnSpark(x, y, color) {
+            const s = document.createElement("div");
+            s.className = "spark";
+            s.style.left = x + "px";
+            s.style.top = y + "px";
+            s.style.background = `radial-gradient(circle, ${color} 0%, transparent 70%)`;
+            gameEl.appendChild(s);
+            setTimeout(() => s.remove(), 520);
+        }
 
-            x = Math.max(
-                0,
-                Math.min(window.innerWidth - playerSize, x)
-            );
+        /* =========================================================================
+           6. STING (tăng tốc tạm thời)
+           ========================================================================= */
+        const stingSize = isMobile ? 34 : 46;
 
+        function spawnSting() {
+            let sx, sy, tries = 0;
+            do {
+                sx = randomX(stingSize);
+                sy = randomY(stingSize);
+                tries++;
+            } while (collidesObstacle(sx, sy, stingSize) && tries < 30);
+            sting.x = sx;
+            sting.y = sy;
+            stingEl.style.left = sx + "px";
+            stingEl.style.top = sy + "px";
+            stingEl.style.display = "block";
+        }
 
-            y = Math.max(
-                0,
-                Math.min(window.innerHeight - playerSize, y)
-            );
+        const sting = {
+            x: 0,
+            y: 0
+        };
+        spawnSting();
 
+        /* =========================================================================
+           7. RẮN - TRUY ĐUỔI NGƯỜI CHƠI, TỐC ĐỘ TĂNG DẦN THEO THỜI GIAN
+           ========================================================================= */
+        const snake = {
+            x: 0,
+            y: 0,
+            size: isMobile ? 40 : 54,
+            speed: isMobile ? 1.6 : 2,
+            maxSpeed: isMobile ? 5 : 6.5,
+            alive: false,
+            spawned: false,
+            hp: 100
+        };
 
+        /* rắn xuất hiện sau vài giây, có cảnh báo trước */
+        setTimeout(() => {
+            if (gameOver || gameWon) return;
 
+            // xuất hiện từ mép bản đồ, xa người chơi
+            const edge = Math.floor(Math.random() * 4);
+            if (edge === 0) {
+                snake.x = 0;
+                snake.y = randomY(snake.size);
+            } else if (edge === 1) {
+                snake.x = window.innerWidth - snake.size;
+                snake.y = randomY(snake.size);
+            } else if (edge === 2) {
+                snake.x = randomX(snake.size);
+                snake.y = 0;
+            } else {
+                snake.x = randomX(snake.size);
+                snake.y = window.innerHeight - snake.size;
+            }
 
+            snakeEl.style.left = snake.x + "px";
+            snakeEl.style.top = snake.y + "px";
+            snakeEl.style.display = "block";
+            snake.alive = true;
+            snake.spawned = true;
+            hudSnakeHp.innerHTML = snake.hp;
 
-            player.style.left = x + "px";
+            warningEl.style.display = "block";
+            soundWarning();
+            setTimeout(() => {
+                warningEl.style.display = "none";
+            }, 2200);
 
-            player.style.top = y + "px";
+        }, 4000);
 
+        /* =========================================================================
+           8. CẬP NHẬT HUD
+           ========================================================================= */
+        function updateHud() {
+            hudBanana.innerHTML = player.bananaCount;
+            hudPower.innerHTML = player.power;
+            hudSpeed.innerHTML = player.speed.toFixed(1);
+            powerBar.style.width = Math.min(100, (player.power / WIN_POWER) * 100) + "%";
+        }
+        updateHud();
 
+        /* =========================================================================
+           9. KẾT THÚC GAME (THẮNG / THUA)
+           ========================================================================= */
+        function endGame(won) {
+            gameOver = !won;
+            gameWon = won;
 
+            overlay.style.display = "flex";
+            if (won) {
+                overlayTitle.textContent = "🎉 YOU WIN";
+                overlayTitle.style.color = "#ffd93b";
+                overlayText.textContent = "Bạn đã đủ mạnh (>= 5000 sức mạnh) và tiêu diệt được rắn khổng lồ!";
+                soundVictory();
+            } else {
+                overlayTitle.textContent = "💀 GAME OVER";
+                overlayTitle.style.color = "#ff5c5c";
+                overlayText.textContent = "Rắn khổng lồ đã bắt được bạn khi sức mạnh chưa đủ 5000. Hãy ăn thêm chuối và thử lại!";
+                soundGameOver();
+            }
+        }
 
+        restartBtn.addEventListener("click", () => location.reload());
 
+        /* =========================================================================
+           10. ĐIỀU KHIỂN - BÀN PHÍM (PC)
+           ========================================================================= */
+        document.addEventListener("keydown", e => {
+            const k = e.key.toLowerCase();
+            if (k === "w" || k === "arrowup") keys.up = true;
+            if (k === "s" || k === "arrowdown") keys.down = true;
+            if (k === "a" || k === "arrowleft") keys.left = true;
+            if (k === "d" || k === "arrowright") keys.right = true;
+        });
 
+        document.addEventListener("keyup", e => {
+            const k = e.key.toLowerCase();
+            if (k === "w" || k === "arrowup") keys.up = false;
+            if (k === "s" || k === "arrowdown") keys.down = false;
+            if (k === "a" || k === "arrowleft") keys.left = false;
+            if (k === "d" || k === "arrowright") keys.right = false;
+        });
 
-            let dx =
-                x - food.offsetLeft;
+        /* =========================================================================
+           11. ĐIỀU KHIỂN - CẢM ỨNG (ĐIỆN THOẠI)
+           ========================================================================= */
+        function bindControl(id, dir) {
+            const btn = document.getElementById(id);
 
+            btn.addEventListener("touchstart", e => {
+                e.preventDefault();
+                getAudioCtx();
+                keys[dir] = true;
+            });
+            btn.addEventListener("touchend", () => {
+                keys[dir] = false;
+            });
+            btn.addEventListener("mousedown", () => {
+                getAudioCtx();
+                keys[dir] = true;
+            });
+            btn.addEventListener("mouseup", () => {
+                keys[dir] = false;
+            });
+            btn.addEventListener("mouseleave", () => {
+                keys[dir] = false;
+            });
+        }
+        bindControl("up", "up");
+        bindControl("down", "down");
+        bindControl("left", "left");
+        bindControl("right", "right");
 
-            let dy =
-                y - food.offsetTop;
+        /* =========================================================================
+           12. VÒNG LẶP CHÍNH CỦA GAME
+           ========================================================================= */
+        function gameLoop() {
 
+            if (!gameOver && !gameWon) {
 
-
-            let distance =
-                Math.sqrt(dx * dx + dy * dy);
-
-
-
-
-
-
-
-            if (distance < playerSize / 2 + 40) {
-
-
-                score++;
-
-
-                scoreText.innerHTML = score;
-
-
-
-                // tăng kích thước
-
-                if (playerSize < maxSize) {
-
-                    playerSize += 10;
-
+                /* ---- 12.1 Hết hiệu lực Sting sau 10 giây ---- */
+                if (player.boosted && Date.now() > player.boostEndTime) {
+                    player.boosted = false;
+                    player.speed = player.baseSpeed;
+                    playerEl.classList.remove("sting-boost");
                 }
 
+                /* ---- 12.2 Di chuyển nhân vật (có va chạm vật cản) ---- */
+                let moving = false;
+                let nextX = player.x;
+                let nextY = player.y;
 
+                if (keys.up) {
+                    nextY -= player.speed;
+                    moving = true;
+                }
+                if (keys.down) {
+                    nextY += player.speed;
+                    moving = true;
+                }
+                if (keys.left) {
+                    nextX -= player.speed;
+                    moving = true;
+                }
+                if (keys.right) {
+                    nextX += player.speed;
+                    moving = true;
+                }
 
-                avatar.style.width =
-                    playerSize + "px";
+                // giới hạn trong màn hình
+                nextX = Math.max(0, Math.min(window.innerWidth - player.size, nextX));
+                nextY = Math.max(0, Math.min(window.innerHeight - player.size, nextY));
 
+                let blocked = false;
 
-                avatar.style.height =
-                    playerSize + "px";
+                // thử di chuyển theo trục X trước (cho phép trượt dọc theo tường)
+                if (!collidesObstacle(nextX, player.y, player.size)) {
+                    player.x = nextX;
+                } else if (nextX !== player.x) {
+                    blocked = true;
+                }
 
+                // rồi thử trục Y
+                if (!collidesObstacle(player.x, nextY, player.size)) {
+                    player.y = nextY;
+                } else if (nextY !== player.y) {
+                    blocked = true;
+                }
 
+                if (blocked && hitSoundCooldown <= 0) {
+                    soundHit();
+                    playerEl.classList.remove("hit-effect");
+                    void playerEl.offsetWidth;
+                    playerEl.classList.add("hit-effect");
+                    hitSoundCooldown = 25; // ~ nửa giây ở 60fps, tránh spam âm thanh
+                }
+                if (hitSoundCooldown > 0) hitSoundCooldown--;
 
-                sizeText.innerHTML =
-                    playerSize;
+                playerEl.style.left = player.x + "px";
+                playerEl.style.top = player.y + "px";
 
+                playerEl.classList.toggle("walking", moving);
 
+                /* ---- 12.3 Va chạm với chuối ---- */
+                for (const b of bananas) {
+                    if (dist(player.x + player.size / 2, player.y + player.size / 2,
+                            b.x + bananaSize / 2, b.y + bananaSize / 2) < player.size / 2 + bananaSize / 2) {
 
+                        // hiệu ứng ánh sáng tại vị trí chuối trước khi nó biến mất
+                        spawnSpark(b.x, b.y, "rgba(255,220,80,.9)");
 
+                        player.bananaCount++;
+                        player.power += 10;
 
-                // hiệu ứng ăn
+                        // tăng kích thước nhân vật theo sức mạnh, có giới hạn tối đa
+                        const growth = Math.min(player.power / WIN_POWER, 1);
+                        player.size = player.baseSize + growth * (player.maxSize - player.baseSize);
+                        avatarEl.style.width = player.size + "px";
+                        avatarEl.style.height = player.size + "px";
 
-                avatar.classList.remove("eat-effect");
+                        // hiệu ứng phóng to + phát sáng + rung nhẹ
+                        avatarEl.classList.remove("eat-effect");
+                        void avatarEl.offsetWidth;
+                        avatarEl.classList.add("eat-effect");
 
+                        soundMonkey();
+                        spawnBananaAt(b);
+                        updateHud();
+                    }
+                }
 
-                void avatar.offsetWidth;
+                /* ---- 12.4 Va chạm với Sting ---- */
+                if (stingEl.style.display !== "none") {
+                    if (dist(player.x + player.size / 2, player.y + player.size / 2,
+                            sting.x + stingSize / 2, sting.y + stingSize / 2) < player.size / 2 + stingSize / 2) {
 
+                        spawnSpark(sting.x, sting.y, "rgba(255,60,60,.9)");
 
-                avatar.classList.add("eat-effect");
+                        player.boosted = true;
+                        player.boostEndTime = Date.now() + 10000; // hiệu lực 10 giây
+                        player.speed = player.baseSpeed * 1.9;
+                        playerEl.classList.add("sting-boost");
 
+                        soundSting();
+                        stingEl.style.display = "none";
+                        setTimeout(spawnSting, 4000); // sinh lại sau vài giây
+                        updateHud();
+                    }
+                }
 
+                /* ---- 12.5 Cập nhật & di chuyển rắn ---- */
+                if (snake.alive) {
 
+                    // tốc độ rắn tăng dần theo thời gian
+                    snake.speed = Math.min(snake.maxSpeed, snake.speed + 0.0015);
 
+                    const dx = (player.x + player.size / 2) - (snake.x + snake.size / 2);
+                    const dy = (player.y + player.size / 2) - (snake.y + snake.size / 2);
+                    const d = Math.hypot(dx, dy) || 1;
 
-                // tăng tốc nhẹ
+                    snake.x += (dx / d) * snake.speed;
+                    snake.y += (dy / d) * snake.speed;
 
-                speed += 0.1;
+                    // lật hướng rắn theo chiều di chuyển ngang
+                    snakeEl.style.transform = dx < 0 ? "scaleX(-1)" : "scaleX(1)";
 
+                    snakeEl.style.left = snake.x + "px";
+                    snakeEl.style.top = snake.y + "px";
 
-
-                randomFood();
-
-
+                    /* ---- va chạm rắn với người chơi -> thắng/thua ---- */
+                    if (d < player.size / 2 + snake.size / 2 - 6) {
+                        if (player.power >= WIN_POWER) {
+                            // đủ mạnh -> tiêu diệt rắn
+                            spawnSpark(snake.x, snake.y, "rgba(255,120,0,.95)");
+                            snake.alive = false;
+                            snake.hp = 0;
+                            hudSnakeHp.innerHTML = 0;
+                            snakeEl.style.display = "none";
+                            endGame(true);
+                        } else {
+                            // chưa đủ mạnh -> thua
+                            endGame(false);
+                        }
+                    }
+                }
 
             }
 
-
-
-
-
-            requestAnimationFrame(game);
-
-
-
+            requestAnimationFrame(gameLoop);
         }
 
-
-
-        game();
-
-
-
-
-
-
-
-        // PC điều khiển
-
-
-        document.addEventListener("keydown", e => {
-
-
-            let k = e.key.toLowerCase();
-
-
-            if (k == "w" || k == "arrowup")
-                keys.up = true;
-
-
-            if (k == "s" || k == "arrowdown")
-                keys.down = true;
-
-
-            if (k == "a" || k == "arrowleft")
-                keys.left = true;
-
-
-            if (k == "d" || k == "arrowright")
-                keys.right = true;
-
-
-        });
-
-
-
-
-
-        document.addEventListener("keyup", e => {
-
-
-            let k = e.key.toLowerCase();
-
-
-            if (k == "w" || k == "arrowup")
-                keys.up = false;
-
-
-            if (k == "s" || k == "arrowdown")
-                keys.down = false;
-
-
-            if (k == "a" || k == "arrowleft")
-                keys.left = false;
-
-
-            if (k == "d" || k == "arrowright")
-                keys.right = false;
-
-
-        });
-
-
-
-
-
-
-
-
-        // nút điện thoại
-
-
-        function control(id, dir) {
-
-
-            let btn = document.getElementById(id);
-
-
-
-            btn.addEventListener("touchstart", e => {
-
-
-                e.preventDefault();
-
-
-                keys[dir] = true;
-
-
-            });
-
-
-
-            btn.addEventListener("touchend", () => {
-
-
-                keys[dir] = false;
-
-
-            });
-
-
-
-            btn.addEventListener("mousedown", () => {
-
-
-                keys[dir] = true;
-
-
-            });
-
-
-
-            btn.addEventListener("mouseup", () => {
-
-
-                keys[dir] = false;
-
-
-            });
-
-
-            btn.addEventListener("mouseleave", () => {
-
-
-                keys[dir] = false;
-
-
-            });
-
-
-        }
-
-
-
-
-
-        control("up", "up");
-
-        control("down", "down");
-
-        control("left", "left");
-
-        control("right", "right");
+        gameLoop();
     </script>
-
-
 
 </body>
 
