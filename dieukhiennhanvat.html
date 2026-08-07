@@ -32,7 +32,8 @@
         
         #player {
             position: absolute;
-            transition: 0.1s;
+            left: 100px;
+            top: 100px;
         }
         
         .avatar {
@@ -41,12 +42,44 @@
             border-radius: 50%;
             object-fit: cover;
             border: 4px solid white;
+            transition: 0.2s;
+        }
+        /* Hiệu ứng ăn */
+        
+        .eat-effect {
+            animation: eat 0.35s;
+            box-shadow: 0 0 20px yellow, 0 0 40px orange;
+        }
+        
+        @keyframes eat {
+            0% {
+                transform: scale(1);
+            }
+            30% {
+                transform: scale(1.35) rotate(10deg);
+            }
+            60% {
+                transform: scale(1.15) rotate(-10deg);
+            }
+            100% {
+                transform: scale(1);
+            }
         }
         /* Đồ ăn */
         
         .food {
             position: absolute;
             font-size: 50px;
+            animation: bounce .8s infinite alternate;
+        }
+        
+        @keyframes bounce {
+            from {
+                transform: scale(1);
+            }
+            to {
+                transform: scale(1.2);
+            }
         }
         /* Điểm */
         
@@ -60,7 +93,7 @@
             font-size: 18px;
             z-index: 10;
         }
-        /* Bộ điều khiển điện thoại */
+        /* Điều khiển */
         
         .controls {
             position: absolute;
@@ -81,18 +114,16 @@
             background: #6a11cb;
             color: white;
             font-size: 30px;
-            font-weight: bold;
         }
         
         .controls button:active {
             background: #2575fc;
-            transform: scale(0.9);
+            transform: scale(.9);
         }
         
         .empty {
             visibility: hidden;
         }
-        /* Màn hình nhỏ */
         
         @media(max-width:600px) {
             .avatar {
@@ -102,15 +133,16 @@
             .food {
                 font-size: 40px;
             }
-            .controls {
-                grid-template-columns: 60px 60px 60px;
-            }
             .controls button {
                 width: 60px;
                 height: 60px;
             }
+            .controls {
+                grid-template-columns: 60px 60px 60px;
+            }
         }
     </style>
+
 
 </head>
 
@@ -122,21 +154,29 @@
     <div id="game">
 
 
+
         <div class="info">
 
-            🍎 Điểm: <span id="score">0</span>
+            🍎 Điểm:
+            <span id="score">0</span>
 
-            <br> Di chuyển để ăn đồ ăn
+            <br> 📏 Kích thước:
+            <span id="sizeText">100</span>
+
+            <br> Di chuyển ăn táo
 
         </div>
+
 
 
 
         <div id="player">
 
-            <img src="./monkey-3614f.webp" class="avatar">
+            <img class="avatar" src="monkey-3614f.webp">
 
         </div>
+
+
 
 
 
@@ -149,9 +189,405 @@
 
 
 
-        <!-- Nút điều khiển điện thoại -->
 
         <div class="controls">
 
 
-            <button
+            <div class="empty"></div>
+
+            <button id="up">⬆️</button>
+
+            <div class="empty"></div>
+
+
+            <button id="left">⬅️</button>
+
+            <button id="down">⬇️</button>
+
+            <button id="right">➡️</button>
+
+
+        </div>
+
+
+    </div>
+
+
+
+
+
+
+
+    <script>
+        const player =
+            document.getElementById("player");
+
+
+        const avatar =
+            document.querySelector(".avatar");
+
+
+        const food =
+            document.getElementById("food");
+
+
+        const scoreText =
+            document.getElementById("score");
+
+
+        const sizeText =
+            document.getElementById("sizeText");
+
+
+
+
+        let x = 100;
+
+        let y = 100;
+
+
+        let speed = 5;
+
+
+        let score = 0;
+
+
+        let playerSize = 100;
+
+
+        let maxSize = 250;
+
+
+
+        let keys = {
+
+            up: false,
+
+            down: false,
+
+            left: false,
+
+            right: false
+
+        };
+
+
+
+
+
+
+        function randomFood() {
+
+
+            food.style.left =
+                Math.random() * (window.innerWidth - 60) + "px";
+
+
+            food.style.top =
+                Math.random() * (window.innerHeight - 60) + "px";
+
+
+        }
+
+
+
+        randomFood();
+
+
+
+
+
+
+
+
+        function game() {
+
+
+
+            if (keys.up)
+                y -= speed;
+
+
+            if (keys.down)
+                y += speed;
+
+
+            if (keys.left)
+                x -= speed;
+
+
+            if (keys.right)
+                x += speed;
+
+
+
+
+
+            x = Math.max(
+                0,
+                Math.min(window.innerWidth - playerSize, x)
+            );
+
+
+            y = Math.max(
+                0,
+                Math.min(window.innerHeight - playerSize, y)
+            );
+
+
+
+
+
+            player.style.left = x + "px";
+
+            player.style.top = y + "px";
+
+
+
+
+
+
+
+            let dx =
+                x - food.offsetLeft;
+
+
+            let dy =
+                y - food.offsetTop;
+
+
+
+            let distance =
+                Math.sqrt(dx * dx + dy * dy);
+
+
+
+
+
+
+
+            if (distance < playerSize / 2 + 40) {
+
+
+                score++;
+
+
+                scoreText.innerHTML = score;
+
+
+
+                // tăng kích thước
+
+                if (playerSize < maxSize) {
+
+                    playerSize += 10;
+
+                }
+
+
+
+                avatar.style.width =
+                    playerSize + "px";
+
+
+                avatar.style.height =
+                    playerSize + "px";
+
+
+
+                sizeText.innerHTML =
+                    playerSize;
+
+
+
+
+
+                // hiệu ứng ăn
+
+                avatar.classList.remove("eat-effect");
+
+
+                void avatar.offsetWidth;
+
+
+                avatar.classList.add("eat-effect");
+
+
+
+
+
+                // tăng tốc nhẹ
+
+                speed += 0.1;
+
+
+
+                randomFood();
+
+
+
+            }
+
+
+
+
+
+            requestAnimationFrame(game);
+
+
+
+        }
+
+
+
+        game();
+
+
+
+
+
+
+
+        // PC điều khiển
+
+
+        document.addEventListener("keydown", e => {
+
+
+            let k = e.key.toLowerCase();
+
+
+            if (k == "w" || k == "arrowup")
+                keys.up = true;
+
+
+            if (k == "s" || k == "arrowdown")
+                keys.down = true;
+
+
+            if (k == "a" || k == "arrowleft")
+                keys.left = true;
+
+
+            if (k == "d" || k == "arrowright")
+                keys.right = true;
+
+
+        });
+
+
+
+
+
+        document.addEventListener("keyup", e => {
+
+
+            let k = e.key.toLowerCase();
+
+
+            if (k == "w" || k == "arrowup")
+                keys.up = false;
+
+
+            if (k == "s" || k == "arrowdown")
+                keys.down = false;
+
+
+            if (k == "a" || k == "arrowleft")
+                keys.left = false;
+
+
+            if (k == "d" || k == "arrowright")
+                keys.right = false;
+
+
+        });
+
+
+
+
+
+
+
+
+        // nút điện thoại
+
+
+        function control(id, dir) {
+
+
+            let btn = document.getElementById(id);
+
+
+
+            btn.addEventListener("touchstart", e => {
+
+
+                e.preventDefault();
+
+
+                keys[dir] = true;
+
+
+            });
+
+
+
+            btn.addEventListener("touchend", () => {
+
+
+                keys[dir] = false;
+
+
+            });
+
+
+
+            btn.addEventListener("mousedown", () => {
+
+
+                keys[dir] = true;
+
+
+            });
+
+
+
+            btn.addEventListener("mouseup", () => {
+
+
+                keys[dir] = false;
+
+
+            });
+
+
+            btn.addEventListener("mouseleave", () => {
+
+
+                keys[dir] = false;
+
+
+            });
+
+
+        }
+
+
+
+
+
+        control("up", "up");
+
+        control("down", "down");
+
+        control("left", "left");
+
+        control("right", "right");
+    </script>
+
+
+
+</body>
+
+</html>
