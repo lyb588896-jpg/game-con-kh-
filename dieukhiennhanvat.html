@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Khỉ sinh tồn - Ăn chuối, uống Sting, đấu rắn</title>
+    <title>Khỉ sinh tồn - Bảng Xếp Hạng & Săn Quái</title>
 
     <style>
         /* ===================== RESET CƠ BẢN ===================== */
@@ -21,11 +21,12 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
-            background: linear-gradient(#8be9fd, #4caf6a);
+            background: #111;
             font-family: Arial, sans-serif;
             touch-action: none;
             user-select: none;
         }
+        /* Màn hình Game đóng vai trò Cửa sổ Camera */
         
         #game {
             width: 100vw;
@@ -35,15 +36,26 @@
             position: relative;
             overflow: hidden;
             display: none;
-            /* chỉ hiện khi người chơi bấm CHƠI */
+        }
+        /* World/Map mở rộng gấp 3 lần màn hình */
+        
+        #world {
+            position: absolute;
+            width: 300vw;
+            height: 300vh;
+            top: 0;
+            left: 0;
+            background: linear-gradient(#8be9fd, #4caf6a);
+            background-size: 100% 100%;
+            will-change: transform;
         }
         /* ===================== NHÂN VẬT KHỈ ===================== */
         
         #player {
             position: absolute;
-            left: 100px;
-            top: 100px;
-            z-index: 5;
+            left: 300px;
+            top: 300px;
+            z-index: 10;
             transition: filter .2s;
         }
         
@@ -132,6 +144,15 @@
                 filter: brightness(1.35);
             }
         }
+        /* ===================== ĐẠN BẮN ===================== */
+        
+        .bullet {
+            position: absolute;
+            font-size: 24px;
+            z-index: 8;
+            pointer-events: none;
+            filter: drop-shadow(0 0 6px orange);
+        }
         /* ===================== CHUỐI ===================== */
         
         .banana {
@@ -178,26 +199,44 @@
             z-index: 2;
             filter: drop-shadow(0 3px 3px rgba(0, 0, 0, .35));
         }
-        /* ===================== RẮN ===================== */
+        /* ===================== QUÁI VẬT DÙNG CHUNG ===================== */
         
-        #snake {
+        .monster {
             position: absolute;
-            font-size: 54px;
-            z-index: 4;
-            display: none;
+            font-size: 52px;
+            z-index: 6;
             filter: drop-shadow(0 3px 4px rgba(0, 0, 0, .4));
-            animation: snakeWiggle .25s infinite alternate;
+            animation: monsterWiggle .3s infinite alternate;
+            transition: opacity .2s;
         }
         
-        @keyframes snakeWiggle {
+        .monster-hp-bar {
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 6px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid #fff;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        
+        .monster-hp-inner {
+            height: 100%;
+            width: 100%;
+            background: #ff3b3b;
+        }
+        
+        @keyframes monsterWiggle {
             from {
-                transform: rotate(-8deg);
+                transform: rotate(-6deg);
             }
             to {
-                transform: rotate(8deg);
+                transform: rotate(6deg);
             }
         }
-        /* ===================== HIỆU ỨNG ÁNH SÁNG DÙNG CHUNG ===================== */
         
         .spark {
             position: absolute;
@@ -205,7 +244,7 @@
             height: 20px;
             border-radius: 50%;
             pointer-events: none;
-            z-index: 6;
+            z-index: 9;
             animation: sparkGrow .5s ease forwards;
         }
         
@@ -222,7 +261,7 @@
         /* ===================== HUD ===================== */
         
         .hud {
-            position: absolute;
+            position: fixed;
             top: calc(clamp(8px, 2vw, 12px) + env(safe-area-inset-top, 0px));
             left: calc(clamp(8px, 2vw, 12px) + env(safe-area-inset-left, 0px));
             background: rgba(255, 255, 255, .92);
@@ -231,8 +270,8 @@
             font-size: clamp(11.5px, 3vw, 15px);
             line-height: 1.55;
             z-index: 20;
-            min-width: clamp(120px, 34vw, 170px);
-            max-width: 46vw;
+            min-width: clamp(140px, 36vw, 190px);
+            max-width: 50vw;
             box-shadow: 0 2px 8px rgba(0, 0, 0, .15);
         }
         
@@ -255,30 +294,56 @@
             background: linear-gradient(90deg, #ffb347, #ff3b3b);
             transition: width .25s;
         }
-        /* =======================================================================
-       CẦN ĐIỀU KHIỂN TRÒN (JOYSTICK MOBA / GAMEPAD)
-       ======================================================================= */
+        /* ===================== NÚT BẮN (SHOOT BUTTON) ===================== */
+        
+        #shootBtn {
+            position: fixed;
+            bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+            right: calc(20px + env(safe-area-inset-right, 0px));
+            width: 76px;
+            height: 76px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #ff5252, #c62828);
+            border: 3px solid #ffffff;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4), inset 0 2px 4px rgba(255, 255, 255, 0.4);
+            color: #fff;
+            font-size: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 30;
+            cursor: pointer;
+            touch-action: manipulation;
+            user-select: none;
+            transition: transform 0.08s ease;
+        }
+        
+        #shootBtn:active {
+            transform: scale(0.88);
+            background: radial-gradient(circle, #ff1744, #b71c1c);
+        }
+        /* ===================== JOYSTICK ===================== */
         
         #joystick-zone {
-            position: absolute;
-            bottom: calc(clamp(15px, 4vh, 35px) + env(safe-area-inset-bottom, 0px));
-            left: calc(clamp(15px, 4vw, 35px) + env(safe-area-inset-left, 0px));
+            position: fixed;
             width: 130px;
             height: 130px;
             z-index: 20;
             touch-action: none;
+            display: none;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
         }
         
         .joystick-base {
             width: 100%;
             height: 100%;
             border-radius: 50%;
-            background: rgba(0, 0, 0, 0.25);
-            border: 3px solid rgba(255, 255, 255, 0.4);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), inset 0 0 15px rgba(0, 0, 0, 0.2);
+            background: rgba(0, 0, 0, 0.35);
+            border: 3px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
             position: relative;
             backdrop-filter: blur(4px);
-            -webkit-backdrop-filter: blur(4px);
         }
         
         .joystick-stick {
@@ -291,14 +356,12 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4), inset 0 2px 4px rgba(255, 255, 255, 0.4);
-            transition: transform 0.05s linear;
             pointer-events: none;
         }
-        /* ===================== MÀN HÌNH KẾT THÚC (THẮNG/THUA) ===================== */
+        /* ===================== OVERLAY & MODALS ===================== */
         
         #overlay {
-            position: absolute;
+            position: fixed;
             inset: 0;
             background: rgba(0, 0, 0, .72);
             display: none;
@@ -308,7 +371,7 @@
             z-index: 50;
             text-align: center;
             color: #fff;
-            padding: clamp(16px, 5vw, 20px);
+            padding: 20px;
         }
         
         #overlay h1 {
@@ -320,53 +383,23 @@
             font-size: clamp(13.5px, 3.5vw, 17px);
             margin-bottom: 20px;
             opacity: .9;
-            max-width: 90vw;
+        }
+        
+        .overlay-btns {
+            display: flex;
+            gap: 12px;
         }
         
         #overlay button {
-            padding: clamp(11px, 3vw, 12px) clamp(24px, 6.5vw, 30px);
-            font-size: clamp(15px, 4vw, 17px);
+            padding: 12px 26px;
+            font-size: 16px;
             border: none;
             border-radius: 999px;
             background: #ffb347;
             color: #222;
             font-weight: bold;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, .3);
-            transition: transform .1s ease, filter .1s ease;
+            cursor: pointer;
         }
-        
-        #overlay button:active {
-            transform: scale(.94);
-            filter: brightness(1.1);
-        }
-        
-        #warning {
-            position: absolute;
-            top: calc(clamp(16px, 4vw, 20px) + env(safe-area-inset-top, 0px));
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(200, 0, 0, .9);
-            color: #fff;
-            padding: clamp(8px, 2.2vw, 10px) clamp(14px, 4vw, 22px);
-            border-radius: 10px;
-            font-size: clamp(13px, 3.5vw, 16px);
-            font-weight: bold;
-            z-index: 30;
-            display: none;
-            max-width: 92vw;
-            text-align: center;
-            animation: warningBlink .5s infinite alternate;
-        }
-        
-        @keyframes warningBlink {
-            from {
-                opacity: 1;
-            }
-            to {
-                opacity: .4;
-            }
-        }
-        /* ===================== TRANG CHỦ ===================== */
         
         #homeScreen {
             position: fixed;
@@ -376,59 +409,53 @@
             align-items: center;
             justify-content: center;
             background: radial-gradient(circle at 50% 20%, #6fd97f 0%, #2f8f4e 55%, #1b5c33 100%);
-            overflow-y: auto;
-            padding: calc(16px + env(safe-area-inset-top, 0px)) calc(12px + env(safe-area-inset-right, 0px)) calc(16px + env(safe-area-inset-bottom, 0px)) calc(12px + env(safe-area-inset-left, 0px));
+            padding: 16px;
         }
         
         .home-card {
             background: rgba(255, 255, 255, .97);
             border-radius: 24px;
-            padding: clamp(22px, 6vw, 36px) clamp(20px, 6vw, 42px) clamp(18px, 5vw, 30px);
+            padding: 30px 36px;
             width: min(94vw, 420px);
             text-align: center;
             box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
-            margin: auto;
         }
         
         .home-title {
-            font-size: clamp(22px, 7.5vw, 34px);
+            font-size: clamp(22px, 7.5vw, 32px);
             font-weight: 800;
             color: #2f8f4e;
-            text-shadow: 1px 2px 0 #d8f5df;
             margin-bottom: 6px;
         }
         
         .home-tagline {
-            font-size: clamp(12.5px, 3.4vw, 14.5px);
+            font-size: 14px;
             color: #555;
-            margin-bottom: 22px;
-            line-height: 1.5;
+            margin-bottom: 20px;
+            line-height: 1.4;
         }
         
         .home-btn {
             display: block;
             width: 100%;
-            padding: clamp(13px, 3.6vw, 15px) clamp(18px, 5vw, 22px);
-            margin-bottom: 12px;
+            padding: 14px;
+            margin-bottom: 10px;
             border: none;
             border-radius: 999px;
-            font-size: clamp(15.5px, 4.4vw, 18px);
+            font-size: 17px;
             font-weight: bold;
             cursor: pointer;
-            min-height: 48px;
-            transition: transform .1s ease, filter .1s ease, box-shadow .1s ease;
-        }
-        
-        .home-btn:active {
-            transform: scale(.95);
-            filter: brightness(1.06);
         }
         
         .btn-play {
             background: linear-gradient(135deg, #ffb347, #ff7b1c);
             color: #fff;
-            font-size: clamp(17px, 5vw, 21px);
-            box-shadow: 0 6px 14px rgba(255, 123, 28, .45);
+        }
+        
+        .btn-leaderboard {
+            background: #fff3c4;
+            color: #b87a00;
+            border: 2px solid #ffe082;
         }
         
         .btn-name {
@@ -443,49 +470,6 @@
             border: 2px solid #ddd;
         }
         
-        .home-btn:hover {
-            filter: brightness(1.05);
-        }
-        
-        .name-preview {
-            font-size: clamp(11.5px, 3vw, 12.5px);
-            color: #888;
-            margin-top: -6px;
-            margin-bottom: 14px;
-        }
-        
-        .leaderboard {
-            margin-top: 18px;
-            text-align: left;
-            background: #f7f7f7;
-            border-radius: 14px;
-            padding: 12px 16px;
-            font-size: clamp(12px, 3.2vw, 13.5px);
-            max-height: clamp(100px, 22vh, 140px);
-            overflow-y: auto;
-        }
-        
-        .leaderboard h3 {
-            font-size: clamp(13px, 3.4vw, 14px);
-            margin-bottom: 6px;
-            color: #333;
-        }
-        
-        .leaderboard ol {
-            padding-left: 20px;
-            color: #555;
-        }
-        
-        .leaderboard li {
-            margin-bottom: 2px;
-        }
-        
-        .leaderboard .empty-lb {
-            color: #999;
-            font-style: italic;
-        }
-        /* ===================== MODAL DÙNG CHUNG ===================== */
-        
         .modal-overlay {
             position: fixed;
             inset: 0;
@@ -494,133 +478,77 @@
             display: none;
             align-items: center;
             justify-content: center;
-            padding: calc(16px + env(safe-area-inset-top, 0px)) 16px calc(16px + env(safe-area-inset-bottom, 0px));
+            padding: 16px;
         }
         
         .modal-box {
             background: #fff;
             border-radius: 20px;
-            padding: clamp(20px, 5.5vw, 26px) clamp(18px, 5.5vw, 26px) 20px;
-            width: min(92vw, 360px);
-            max-height: 88vh;
-            overflow-y: auto;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, .35);
+            padding: 24px;
+            width: min(92vw, 380px);
         }
         
         .modal-box h2 {
-            font-size: clamp(18px, 5vw, 20px);
-            margin-bottom: 18px;
+            font-size: 20px;
+            margin-bottom: 16px;
             color: #2f8f4e;
             text-align: center;
         }
         
-        .modal-box label {
-            display: block;
-            font-size: clamp(13px, 3.4vw, 14px);
-            color: #444;
-            margin-bottom: 6px;
-            margin-top: 14px;
-        }
-        
         .modal-box input[type="text"] {
             width: 100%;
-            padding: 10px 12px;
-            font-size: 16px;
+            padding: 10px;
             border: 2px solid #ddd;
             border-radius: 999px;
-            outline: none;
             text-align: center;
+            font-size: 16px;
+        }
+        /* BẢNG XẾP HẠNG UI */
+        
+        .leaderboard-list {
+            list-style: none;
+            margin: 15px 0;
+            max-height: 240px;
+            overflow-y: auto;
         }
         
-        .modal-box input[type="text"]:focus {
-            border-color: #6a9;
-        }
-        
-        .setting-row {
+        .leaderboard-item {
             display: flex;
-            align-items: center;
             justify-content: space-between;
-            margin-top: 16px;
+            padding: 10px 14px;
+            border-bottom: 1px solid #eee;
+            font-size: 15px;
         }
         
-        .setting-row span {
-            font-size: clamp(13.5px, 3.6vw, 14.5px);
-            color: #333;
+        .leaderboard-item:nth-child(1) {
+            font-weight: bold;
+            color: #d4af37;
+            background: #fffdf0;
         }
         
-        .toggle-switch {
-            position: relative;
-            width: 44px;
-            height: 24px;
-            flex-shrink: 0;
+        .leaderboard-item:nth-child(2) {
+            font-weight: bold;
+            color: #a8a8a8;
         }
         
-        .toggle-switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-        
-        .toggle-slider {
-            position: absolute;
-            inset: 0;
-            background: #ccc;
-            border-radius: 999px;
-            cursor: pointer;
-            transition: .2s;
-        }
-        
-        .toggle-slider::before {
-            content: "";
-            position: absolute;
-            width: 18px;
-            height: 18px;
-            left: 3px;
-            top: 3px;
-            background: #fff;
-            border-radius: 50%;
-            transition: .2s;
-        }
-        
-        .toggle-switch input:checked+.toggle-slider {
-            background: #4caf6a;
-        }
-        
-        .toggle-switch input:checked+.toggle-slider::before {
-            transform: translateX(20px);
-        }
-        
-        .volume-row {
-            margin-top: 6px;
-        }
-        
-        .volume-row input[type="range"] {
-            width: 100%;
-            height: 28px;
-            accent-color: #ff7b1c;
+        .leaderboard-item:nth-child(3) {
+            font-weight: bold;
+            color: #b87333;
         }
         
         .modal-actions {
-            margin-top: 22px;
+            margin-top: 20px;
             display: flex;
             gap: 10px;
         }
         
         .modal-actions button {
             flex: 1;
-            padding: 11px;
+            padding: 10px;
             border: none;
             border-radius: 999px;
-            font-size: 15px;
             font-weight: bold;
             cursor: pointer;
-            min-height: 44px;
-            transition: transform .1s ease, filter .1s ease;
-        }
-        
-        .modal-actions button:active {
-            transform: scale(.95);
-            filter: brightness(1.06);
         }
         
         .btn-close {
@@ -632,7 +560,6 @@
             background: #4caf6a;
             color: #fff;
         }
-        /* ===================== ADAPTIVE DIỆN THOẠI ===================== */
         
         @media (max-width: 600px) {
             .avatar {
@@ -645,66 +572,17 @@
             .obstacle {
                 font-size: 32px;
             }
+            .monster {
+                font-size: 42px;
+            }
             #sting {
                 width: 34px;
                 height: 34px;
             }
-            #snake {
-                font-size: 40px;
-            }
-            #joystick-zone {
-                width: 110px;
-                height: 110px;
-            }
-            .joystick-stick {
-                width: 44px;
-                height: 44px;
-            }
-        }
-        
-        @media (max-height: 480px) and (orientation: landscape) {
-            .hud {
-                font-size: clamp(10px, 2.4vh, 12.5px);
-                padding: clamp(6px, 1.6vh, 8px) clamp(8px, 2vh, 10px);
-                min-width: 130px;
-                max-width: 40vw;
-            }
-            #joystick-zone {
-                bottom: 12px;
-                left: 12px;
-                width: 95px;
-                height: 95px;
-            }
-            .joystick-stick {
-                width: 38px;
-                height: 38px;
-            }
-            .avatar {
-                width: clamp(46px, 12vh, 70px);
-                height: clamp(46px, 12vh, 70px);
-            }
-            .home-card {
-                padding: 16px 20px;
-            }
-            .home-title {
-                font-size: clamp(18px, 5vh, 24px);
-                margin-bottom: 2px;
-            }
-            .home-tagline {
-                margin-bottom: 12px;
-            }
-            .leaderboard {
-                max-height: 70px;
-            }
-            #overlay h1 {
-                font-size: clamp(22px, 6vh, 32px);
-                margin-bottom: 8px;
-            }
-        }
-        
-        @media (max-height: 360px) {
-            .leaderboard {
-                display: none;
+            #shootBtn {
+                width: 66px;
+                height: 66px;
+                font-size: 28px;
             }
         }
     </style>
@@ -712,33 +590,26 @@
 
 <body>
 
-    <!-- ===================== TRANG CHỦ ===================== -->
+    <!-- TRANG CHỦ -->
     <div id="homeScreen">
         <div class="home-card">
             <div class="home-title">🐒 KHỈ SINH TỒN</div>
             <div class="home-tagline">
-                Ăn chuối tiến hóa sức mạnh, uống Sting tăng tốc,<br> vượt chướng ngại vật và đánh bại rắn khổng lồ!
+                Bắn tiêu diệt Rắn, Hổ, Cá sấu, Lợn rừng!<br> Ăn chuối (+100 Sức mạnh). Đạt 10.000 điểm để thắng!
             </div>
 
             <button class="home-btn btn-play" id="btnPlay">🎮 CHƠI</button>
+            <button class="home-btn btn-leaderboard" id="btnLeaderboardHome">🏆 BẢNG XẾP HẠNG</button>
             <button class="home-btn btn-name" id="btnName">✏️ ĐẶT TÊN</button>
-            <div class="name-preview" id="namePreview">Chưa đặt tên (Ẩn danh)</div>
+            <div style="font-size:12px; color:#888; margin-bottom:12px;" id="namePreview">Chưa đặt tên</div>
             <button class="home-btn btn-settings" id="btnSettings">⚙️ CÀI ĐẶT</button>
-
-            <div class="leaderboard">
-                <h3>🏆 Bảng xếp hạng (Top 5 sức mạnh)</h3>
-                <ol id="leaderboardList">
-                    <li class="empty-lb">Chưa có dữ liệu, hãy chơi ván đầu tiên!</li>
-                </ol>
-            </div>
         </div>
     </div>
 
-    <!-- ===================== MODAL ĐẶT TÊN ===================== -->
+    <!-- MODAL ĐẶT TÊN -->
     <div class="modal-overlay" id="nameModal">
         <div class="modal-box">
             <h2>✏️ Đặt tên người chơi</h2>
-            <label for="nameInput">Tên của bạn (hiển thị trong game &amp; bảng xếp hạng)</label>
             <input type="text" id="nameInput" maxlength="16" placeholder="Ví dụ: Khỉ Vàng">
             <div class="modal-actions">
                 <button class="btn-close" id="nameCloseBtn">Đóng</button>
@@ -747,829 +618,829 @@
         </div>
     </div>
 
-    <!-- ===================== MODAL CÀI ĐẶT ===================== -->
-    <div class="modal-overlay" id="settingsModal">
+    <!-- MODAL BẢNG XẾP HẠNG -->
+    <div class="modal-overlay" id="leaderboardModal">
         <div class="modal-box">
-            <h2>⚙️ Cài đặt</h2>
-
-            <div class="setting-row">
-                <span>🔊 Âm thanh (hiệu ứng)</span>
-                <label class="toggle-switch">
-                <input type="checkbox" id="sfxEnabledInput" checked>
-                <span class="toggle-slider"></span>
-            </label>
-            </div>
-            <div class="volume-row">
-                <input type="range" id="sfxVolumeInput" min="0" max="100" value="80">
-            </div>
-
-            <div class="setting-row">
-                <span>🎵 Nhạc nền</span>
-                <label class="toggle-switch">
-                <input type="checkbox" id="musicEnabledInput" checked>
-                <span class="toggle-slider"></span>
-            </label>
-            </div>
-            <div class="volume-row">
-                <input type="range" id="musicVolumeInput" min="0" max="100" value="50">
-            </div>
-
+            <h2>🏆 BẢNG XẾP HẠNG 🏆</h2>
+            <ul class="leaderboard-list" id="leaderboardList">
+                <!-- Danh sách xếp hạng sẽ render tự động ở đây -->
+            </ul>
             <div class="modal-actions">
-                <button class="btn-close" id="settingsCloseBtn" style="flex:1 1 100%;">Đóng</button>
+                <button class="btn-close" id="leaderboardCloseBtn">Đóng</button>
             </div>
         </div>
     </div>
 
-    <!-- ===================== MÀN HÌNH GAME ===================== -->
-    <div id="game">
+    <!-- MODAL CÀI ĐẶT -->
+    <div class="modal-overlay" id="settingsModal">
+        <div class="modal-box">
+            <h2>⚙️ Cài đặt</h2>
+            <p style="text-align:center; color:#666; margin-bottom:15px;">Điều chỉnh âm thanh game</p>
+            <div class="modal-actions">
+                <button class="btn-close" id="settingsCloseBtn" style="flex:1;">Đóng</button>
+            </div>
+        </div>
+    </div>
 
-        <!-- HUD -->
+    <!-- MÀN HÌNH GAME -->
+    <div id="game">
+        <div id="world">
+            <div id="bananas"></div>
+            <div id="obstacles"></div>
+            <div id="monsters"></div>
+            <div id="bullets"></div>
+            <img id="sting" src="sting.png" alt="sting">
+
+            <!-- Nhân vật Khỉ -->
+            <div id="player">
+                <img class="avatar" src="monkey-3614f.webp" alt="khỉ">
+            </div>
+        </div>
+
+        <!-- HUD UI -->
         <div class="hud">
-            <span id="hudNameRow" style="display:none;">🐒 <b id="hudName"></b><br></span> 🍌 Chuối đã ăn: <b id="hudBanana">0</b><br> 💪 Sức mạnh: <b id="hudPower">0</b> / 5000<br>
+            🍌 Chuối: <b id="hudBanana">0</b><br> 💪 Sức mạnh: <b id="hudPower">0</b> / 10000<br>
             <div class="power-bar-outer">
                 <div class="power-bar-inner" id="powerBar"></div>
             </div>
-            ⚡ Tốc độ: <b id="hudSpeed">5</b><br> 🐍 Máu rắn: <b id="hudSnakeHp">--</b>
+            ⚡ Tốc độ: <b id="hudSpeed">5</b><br> 👾 Quái tiêu diệt: <b id="hudKills">0</b>
         </div>
 
-        <!-- Cảnh báo -->
-        <div id="warning">⚠️ Rắn khổng lồ xuất hiện! ⚠️</div>
+        <!-- Nút Bắn -->
+        <div id="shootBtn">🔥</div>
 
-        <!-- Nhân vật khỉ -->
-        <div id="player">
-            <img class="avatar" src="monkey-3614f.webp" alt="khỉ">
-        </div>
-
-        <!-- Vật phẩm và chướng ngại vật -->
-        <div id="bananas"></div>
-        <div id="obstacles"></div>
-        <img id="sting" src="sting.png" alt="sting">
-        <div id="snake">🐍</div>
-
-        <!-- CẦN ĐIỀU KHIỂN TRÒN (JOYSTICK) -->
+        <!-- Dynamic Joystick Zone -->
         <div id="joystick-zone">
             <div class="joystick-base">
                 <div class="joystick-stick" id="joystick-stick"></div>
             </div>
         </div>
 
-        <!-- Màn hình kết thúc -->
+        <!-- Overlay Kết thúc -->
         <div id="overlay">
             <h1 id="overlayTitle"></h1>
             <p id="overlayText"></p>
-            <button id="restartBtn">🔁 Chơi lại</button>
+            <div class="overlay-btns">
+                <button id="restartBtn">🔁 Chơi lại</button>
+                <button id="overlayLeaderboardBtn" style="background:#ffe082; color:#5a3e00;">🏆 BXH</button>
+            </div>
         </div>
-
     </div>
 
     <script>
-        /* ---------- Tham chiếu phần tử DOM ---------- */
+        /* ---------- DOM REFERENCES ---------- */
         const gameEl = document.getElementById("game");
+        const worldEl = document.getElementById("world");
         const playerEl = document.getElementById("player");
-        const avatarEl = document.querySelector(".avatar");
         const bananasEl = document.getElementById("bananas");
         const obstaclesEl = document.getElementById("obstacles");
+        const monstersEl = document.getElementById("monsters");
+        const bulletsEl = document.getElementById("bullets");
         const stingEl = document.getElementById("sting");
-        const snakeEl = document.getElementById("snake");
 
-        const hudNameRow = document.getElementById("hudNameRow");
-        const hudName = document.getElementById("hudName");
         const hudBanana = document.getElementById("hudBanana");
         const hudPower = document.getElementById("hudPower");
         const hudSpeed = document.getElementById("hudSpeed");
-        const hudSnakeHp = document.getElementById("hudSnakeHp");
+        const hudKills = document.getElementById("hudKills");
         const powerBar = document.getElementById("powerBar");
-        const warningEl = document.getElementById("warning");
 
+        const shootBtn = document.getElementById("shootBtn");
         const overlay = document.getElementById("overlay");
         const overlayTitle = document.getElementById("overlayTitle");
         const overlayText = document.getElementById("overlayText");
         const restartBtn = document.getElementById("restartBtn");
+        const overlayLeaderboardBtn = document.getElementById("overlayLeaderboardBtn");
 
-        /* Trang chủ & Modal */
         const homeScreen = document.getElementById("homeScreen");
         const btnPlay = document.getElementById("btnPlay");
+        const btnLeaderboardHome = document.getElementById("btnLeaderboardHome");
         const btnName = document.getElementById("btnName");
         const btnSettings = document.getElementById("btnSettings");
         const namePreview = document.getElementById("namePreview");
-        const leaderboardList = document.getElementById("leaderboardList");
 
         const nameModal = document.getElementById("nameModal");
         const nameInput = document.getElementById("nameInput");
         const nameSaveBtn = document.getElementById("nameSaveBtn");
         const nameCloseBtn = document.getElementById("nameCloseBtn");
 
+        const leaderboardModal = document.getElementById("leaderboardModal");
+        const leaderboardList = document.getElementById("leaderboardList");
+        const leaderboardCloseBtn = document.getElementById("leaderboardCloseBtn");
+
         const settingsModal = document.getElementById("settingsModal");
         const settingsCloseBtn = document.getElementById("settingsCloseBtn");
-        const sfxEnabledInput = document.getElementById("sfxEnabledInput");
-        const sfxVolumeInput = document.getElementById("sfxVolumeInput");
-        const musicEnabledInput = document.getElementById("musicEnabledInput");
-        const musicVolumeInput = document.getElementById("musicVolumeInput");
 
-        /* Joystick DOM */
         const joystickZone = document.getElementById("joystick-zone");
         const joystickStick = document.getElementById("joystick-stick");
 
         const isMobile = window.innerWidth <= 600;
 
-        function setViewportHeightVar() {
-            document.documentElement.style.setProperty("--vh", window.innerHeight * 0.01 + "px");
+        /* ---------- GAME STATE ---------- */
+        let playerName = localStorage.getItem("monkeyPlayerName") || "";
+
+        function updateNamePreview() {
+            namePreview.textContent = playerName ? `Tên: ${playerName}` : "Chưa đặt tên";
         }
-        setViewportHeightVar();
-        window.addEventListener("resize", setViewportHeightVar);
+        updateNamePreview();
 
-        /* ---------- Lưu trữ Tên & Bảng xếp hạng ---------- */
-        let playerName = "";
-        try {
-            playerName = localStorage.getItem("monkeyPlayerName") || "";
-        } catch (e) {}
-
-        function refreshNamePreview() {
-            namePreview.textContent = playerName ? `Tên hiện tại: ${playerName}` : "Chưa đặt tên (Ẩn danh)";
-        }
-        refreshNamePreview();
-
-        function loadLeaderboard() {
-            try {
-                return JSON.parse(localStorage.getItem("monkeySurvivalLeaderboard") || "[]");
-            } catch (e) {
-                return [];
-            }
-        }
-
-        function saveScoreToLeaderboard(power, bananaCount, won) {
-            try {
-                const list = loadLeaderboard();
-                list.push({
-                    name: playerName || "Ẩn danh",
-                    power,
-                    bananaCount,
-                    won,
-                    date: new Date().toLocaleDateString("vi-VN")
-                });
-                list.sort((a, b) => b.power - a.power);
-                localStorage.setItem("monkeySurvivalLeaderboard", JSON.stringify(list.slice(0, 5)));
-            } catch (e) {}
-        }
-
-        function renderLeaderboard() {
-            const list = loadLeaderboard();
-            if (list.length === 0) {
-                leaderboardList.innerHTML = '<li class="empty-lb">Chưa có dữ liệu, hãy chơi ván đầu tiên!</li>';
-                return;
-            }
-            leaderboardList.innerHTML = list.map(entry =>
-                `<li>${entry.name} — 💪 ${entry.power} (🍌 ${entry.bananaCount}) ${entry.won ? "🎉" : ""}</li>`
-            ).join("");
-        }
-        renderLeaderboard();
-
-        /* ---------- Trạng thái Game & Nhân vật ---------- */
         const player = {
-            x: 100,
-            y: 100,
-            baseSize: isMobile ? 60 : 90,
-            maxSize: isMobile ? 60 : 90, // GIỮ NGUYÊN KÍCH THƯỚC BẰNG NGUYÊN BẢN
+            x: 500,
+            y: 500,
             size: isMobile ? 60 : 90,
             baseSpeed: isMobile ? 4 : 5,
             speed: isMobile ? 4 : 5,
-            power: 0,
+            power: 100, // Khởi đầu với 100 điểm
             bananaCount: 0,
+            kills: 0,
             boosted: false,
-            boostEndTime: 0
+            boostEndTime: 0,
+            lastDirX: 1, // Hướng nhìn mặc định
+            lastDirY: 0
         };
 
-        const WIN_POWER = 5000;
+        const WIN_POWER = 10000; // Thay đổi mục tiêu thắng thành 10000 điểm
+        const BANANA_POWER_REWARD = 100; // Ăn chuối được 100 điểm
         const keys = {
             up: false,
             down: false,
             left: false,
             right: false
         };
-
         let joystickVector = {
             x: 0,
             y: 0
         };
         let isJoystickActive = false;
+        let activeTouchId = null;
 
         let gameOver = false;
-        let gameWon = false;
         let gameStarted = false;
-        let hitSoundCooldown = 0;
+        let hitCooldown = 0;
 
-        /* ---------- Âm thanh Web Audio API ---------- */
+        /* ---------- LEADERBOARD SYSTEM (BẢNG XẾP HẠNG) ---------- */
+        function getLeaderboard() {
+            const data = localStorage.getItem("monkeyLeaderboard");
+            return data ? JSON.parse(data) : [];
+        }
+
+        function saveScore(name, score) {
+            if (!name) name = "Vô danh";
+            let leaderboard = getLeaderboard();
+
+            // Thêm lượt chơi mới vào bảng
+            leaderboard.push({
+                name,
+                score,
+                date: new Date().toLocaleDateString('vi-VN')
+            });
+
+            // Sắp xếp điểm giảm dần
+            leaderboard.sort((a, b) => b.score - a.score);
+
+            // Chỉ giữ Top 5 điểm cao nhất
+            leaderboard = leaderboard.slice(0, 5);
+
+            localStorage.setItem("monkeyLeaderboard", JSON.stringify(leaderboard));
+        }
+
+        function renderLeaderboard() {
+            const leaderboard = getLeaderboard();
+            leaderboardList.innerHTML = "";
+
+            if (leaderboard.length === 0) {
+                leaderboardList.innerHTML = `<li style="text-align:center; color:#888; padding:15px;">Chưa có dữ liệu xếp hạng</li>`;
+                return;
+            }
+
+            leaderboard.forEach((item, index) => {
+                const li = document.createElement("li");
+                li.className = "leaderboard-item";
+                li.innerHTML = `
+                    <span>#${index + 1} <b>${item.name}</b></span>
+                    <span><b>${item.score}</b> điểm</span>
+                `;
+                leaderboardList.appendChild(li);
+            });
+        }
+
+        /* ---------- ENTITIES ---------- */
+        const bananas = [];
+        const BANANA_COUNT = 35;
+        const obstacles = [];
+        const OBSTACLE_COUNT = 25;
+        const monsters = [];
+        const MONSTER_COUNT = 20;
+        const bullets = [];
+
+        const sting = {
+            x: -1000,
+            y: -1000,
+            size: 46,
+            active: false
+        };
+
+        const MONSTER_TYPES = [{
+            type: 'snake',
+            icon: '🐍',
+            speed: 2.0
+        }, {
+            type: 'tiger',
+            icon: '🐅',
+            speed: 2.8
+        }, {
+            type: 'croc',
+            icon: '🐊',
+            speed: 1.6
+        }, {
+            type: 'boar',
+            icon: '🐗',
+            speed: 2.4
+        }];
+
+        function getMapBounds() {
+            return {
+                width: window.innerWidth * 3,
+                height: window.innerHeight * 3
+            };
+        }
+
+        function randomPos(size) {
+            const bounds = getMapBounds();
+            return {
+                x: Math.random() * (bounds.width - size - 100) + 50,
+                y: Math.random() * (bounds.height - size - 100) + 50
+            };
+        }
+
+        /* ---------- WEB AUDIO SOUNDS ---------- */
         let audioCtx = null;
-        let sfxEnabled = true;
-        let sfxVolume = 0.8;
-        let musicEnabled = true;
-        let musicVolume = 0.5;
 
         function getAudioCtx() {
-            if (!audioCtx) {
-                audioCtx = new(window.AudioContext || window.webkitAudioContext)();
-            }
+            if (!audioCtx) audioCtx = new(window.AudioContext || window.webkitAudioContext)();
             if (audioCtx.state === "suspended") audioCtx.resume();
             return audioCtx;
         }
 
-        function rawTone(freqStart, freqEnd, duration, delay, volume, type) {
+        function playSound(fStart, fEnd, duration, type = "sine") {
             try {
                 const ctx = getAudioCtx();
                 const osc = ctx.createOscillator();
                 const gain = ctx.createGain();
-                osc.type = type || "sawtooth";
+                osc.type = type;
                 osc.connect(gain);
                 gain.connect(ctx.destination);
-
-                const t0 = ctx.currentTime + delay;
-                const t1 = t0 + duration;
-
-                osc.frequency.setValueAtTime(freqStart, t0);
-                osc.frequency.exponentialRampToValueAtTime(Math.max(40, freqEnd), t1);
-
-                gain.gain.setValueAtTime(0.0001, t0);
-                gain.gain.exponentialRampToValueAtTime(Math.max(0.0001, volume), t0 + duration * 0.25);
-                gain.gain.exponentialRampToValueAtTime(0.0001, t1);
-
+                const t0 = ctx.currentTime;
+                osc.frequency.setValueAtTime(fStart, t0);
+                osc.frequency.exponentialRampToValueAtTime(Math.max(20, fEnd), t0 + duration);
+                gain.gain.setValueAtTime(0.15, t0);
+                gain.gain.exponentialRampToValueAtTime(0.001, t0 + duration);
                 osc.start(t0);
-                osc.stop(t1 + 0.02);
+                osc.stop(t0 + duration);
             } catch (e) {}
         }
 
-        function tone(freqStart, freqEnd, duration, delay, volume, type) {
-            if (!sfxEnabled) return;
-            rawTone(freqStart, freqEnd, duration, delay, volume * sfxVolume, type);
-        }
-
-        function soundMonkey() {
-            tone(600, 300, 0.12, 0, 0.18, "sawtooth");
-            tone(650, 320, 0.12, 0.13, 0.18, "sawtooth");
-        }
-
-        function soundSting() {
-            tone(200, 1400, 0.35, 0, 0.2, "square");
-            tone(300, 1600, 0.25, 0.1, 0.15, "square");
-        }
-
-        function soundHit() {
-            tone(150, 60, 0.15, 0, 0.25, "square");
-        }
-
-        function soundWarning() {
-            tone(880, 440, 0.3, 0, 0.2, "triangle");
-            tone(880, 440, 0.3, 0.35, 0.2, "triangle");
-        }
-
-        function soundVictory() {
-            tone(523, 523, 0.15, 0, 0.2, "triangle");
-            tone(659, 659, 0.15, 0.15, 0.2, "triangle");
-            tone(784, 784, 0.15, 0.30, 0.2, "triangle");
-            tone(1046, 1046, 0.3, 0.45, 0.25, "triangle");
-        }
-
-        function soundGameOver() {
-            tone(300, 80, 0.6, 0, 0.25, "sawtooth");
-        }
-
-        const musicSequence = [392, 440, 523, 440, 392, 349, 392, 523];
-        let musicStep = 0;
-        let musicInterval = null;
-
-        function playMusicNote(freq) {
-            if (!musicEnabled) return;
-            rawTone(freq, freq, 0.35, 0, 0.14 * musicVolume, "sine");
-        }
-
-        function startMusic() {
-            if (musicInterval) return;
-            musicInterval = setInterval(() => {
-                playMusicNote(musicSequence[musicStep % musicSequence.length]);
-                musicStep++;
-            }, 480);
-        }
-
-        /* ---------- Tiện ích vị trí & Chướng ngại vật ---------- */
-        function randomX(size) {
-            return Math.random() * (window.innerWidth - size);
-        }
-
-        function randomY(size) {
-            return Math.random() * (window.innerHeight - size);
-        }
-
-        function dist(x1, y1, x2, y2) {
-            return Math.hypot(x1 - x2, y1 - y2);
-        }
-
-        const obstacleEmojis = ["🌲", "🌲", "🧱"];
-        const obstacleCount = isMobile ? 6 : 10;
-        const obstacleSize = isMobile ? 40 : 52;
-        let obstacles = [];
-
-        function createObstacles() {
-            obstaclesEl.innerHTML = "";
-            obstacles = [];
-            for (let i = 0; i < obstacleCount; i++) {
+        /* ---------- INIT GAME WORLD ---------- */
+        function initEntities() {
+            // Bananas
+            bananasEl.innerHTML = "";
+            bananas.length = 0;
+            for (let i = 0; i < BANANA_COUNT; i++) {
+                const pos = randomPos(40);
                 const el = document.createElement("div");
-                el.className = "obstacle";
-                el.textContent = obstacleEmojis[Math.floor(Math.random() * obstacleEmojis.length)];
-
-                let ox, oy, tries = 0;
-                do {
-                    ox = randomX(obstacleSize);
-                    oy = randomY(obstacleSize);
-                    tries++;
-                } while (dist(ox, oy, player.x, player.y) < 180 && tries < 30);
-
-                el.style.left = ox + "px";
-                el.style.top = oy + "px";
-
-                obstaclesEl.appendChild(el);
-                obstacles.push({
-                    el,
-                    x: ox,
-                    y: oy,
-                    size: obstacleSize
+                el.className = "banana";
+                el.textContent = "🍌";
+                el.style.left = pos.x + "px";
+                el.style.top = pos.y + "px";
+                bananasEl.appendChild(el);
+                bananas.push({
+                    x: pos.x,
+                    y: pos.y,
+                    size: 40,
+                    el
                 });
             }
-        }
 
-        function collidesObstacle(px, py, psize) {
-            for (const o of obstacles) {
-                const overlapX = px < o.x + o.size && px + psize > o.x;
-                const overlapY = py < o.y + o.size && py + psize > o.y;
-                if (overlapX && overlapY) return true;
+            // Obstacles
+            obstaclesEl.innerHTML = "";
+            obstacles.length = 0;
+            const obsIcons = ["🪨", "🪵", "🌵", "🌳"];
+            for (let i = 0; i < OBSTACLE_COUNT; i++) {
+                const pos = randomPos(46);
+                const el = document.createElement("div");
+                el.className = "obstacle";
+                el.textContent = obsIcons[Math.floor(Math.random() * obsIcons.length)];
+                el.style.left = pos.x + "px";
+                el.style.top = pos.y + "px";
+                obstaclesEl.appendChild(el);
+                obstacles.push({
+                    x: pos.x,
+                    y: pos.y,
+                    size: 42,
+                    el
+                });
             }
-            return false;
-        }
 
-        /* ---------- Vật phẩm Chuối & Sting ---------- */
-        const bananaCount = isMobile ? 7 : 12;
-        const bananaSize = isMobile ? 32 : 44;
-        let bananas = [];
-
-        function createBananas() {
-            bananasEl.innerHTML = "";
-            bananas = [];
-            for (let i = 0; i < bananaCount; i++) {
-                spawnBanana();
+            // Monsters (Rắn, Hổ, Cá Sấu, Lợn Rừng)
+            monstersEl.innerHTML = "";
+            monsters.length = 0;
+            for (let i = 0; i < MONSTER_COUNT; i++) {
+                spawnMonster();
             }
+
+            // Sting
+            spawnSting();
         }
 
-        function spawnBanana() {
+        function spawnMonster() {
+            const pos = randomPos(50);
+            const template = MONSTER_TYPES[Math.floor(Math.random() * MONSTER_TYPES.length)];
+
             const el = document.createElement("div");
-            el.className = "banana";
-            el.textContent = "🍌";
+            el.className = "monster";
+            el.innerHTML = `${template.icon}<div class="monster-hp-bar"><div class="monster-hp-inner"></div></div>`;
+            el.style.left = pos.x + "px";
+            el.style.top = pos.y + "px";
+            monstersEl.appendChild(el);
 
-            let bx, by, tries = 0;
-            do {
-                bx = randomX(bananaSize);
-                by = randomY(bananaSize);
-                tries++;
-            } while (collidesObstacle(bx, by, bananaSize) && tries < 30);
-
-            el.style.left = bx + "px";
-            el.style.top = by + "px";
-
-            bananasEl.appendChild(el);
-            bananas.push({
+            monsters.push({
+                x: pos.x,
+                y: pos.y,
+                size: 50,
+                hp: 2, // 2 Lần đánh/bắn sẽ chết
+                maxHp: 2,
+                speed: template.speed,
+                icon: template.icon,
                 el,
-                x: bx,
-                y: by,
-                size: bananaSize
+                hpInner: el.querySelector(".monster-hp-inner")
             });
         }
 
-        let sting = {
-            x: -100,
-            y: -100,
-            size: isMobile ? 34 : 46,
-            active: false
-        };
-
         function spawnSting() {
-            let sx, sy, tries = 0;
-            do {
-                sx = randomX(sting.size);
-                sy = randomY(sting.size);
-                tries++;
-            } while (collidesObstacle(sx, sy, sting.size) && tries < 30);
-
-            sting.x = sx;
-            sting.y = sy;
+            const pos = randomPos(sting.size);
+            sting.x = pos.x;
+            sting.y = pos.y;
             sting.active = true;
-
-            stingEl.style.left = sx + "px";
-            stingEl.style.top = sy + "px";
+            stingEl.style.left = sting.x + "px";
+            stingEl.style.top = sting.y + "px";
             stingEl.style.display = "block";
         }
 
-        setInterval(() => {
-            if (gameStarted && !gameOver && !sting.active) {
-                spawnSting();
+        /* ---------- SHOOTING SYSTEM (BẮN) ---------- */
+        function shoot() {
+            if (gameOver || !gameStarted) return;
+
+            // Tấn công sẽ trừ 50 điểm sức mạnh
+            player.power -= 50;
+            playSound(400, 150, 0.15, "square");
+
+            playerEl.classList.add("hit-effect");
+            setTimeout(() => playerEl.classList.remove("hit-effect"), 200);
+
+            // Kiểm tra hết sức mạnh -> Thua
+            if (player.power <= 0) {
+                player.power = 0;
+                triggerLose();
+                return;
             }
-        }, 12000);
 
-        /* ---------- Rắn Khổng Lồ ---------- */
-        const snake = {
-            x: -200,
-            y: -200,
-            size: isMobile ? 42 : 56,
-            speed: isMobile ? 2.2 : 2.8,
-            active: false,
-            hp: 5000
-        };
+            // Tạo đạn
+            let dirX = player.lastDirX;
+            let dirY = player.lastDirY;
 
-        function spawnSnake() {
-            if (snake.active) return;
-            snake.active = true;
-            snake.x = window.innerWidth - 120;
-            snake.y = window.innerHeight - 120;
-            snakeEl.style.display = "block";
-            warningEl.style.display = "block";
-            soundWarning();
-            setTimeout(() => {
-                warningEl.style.display = "none";
-            }, 3500);
+            if (dirX === 0 && dirY === 0) dirX = 1;
+
+            const bulletEl = document.createElement("div");
+            bulletEl.className = "bullet";
+            bulletEl.textContent = "🔥";
+
+            const startX = player.x + player.size / 2 - 12;
+            const startY = player.y + player.size / 2 - 12;
+
+            bulletEl.style.left = startX + "px";
+            bulletEl.style.top = startY + "px";
+            bulletsEl.appendChild(bulletEl);
+
+            bullets.push({
+                x: startX,
+                y: startY,
+                dirX: dirX,
+                dirY: dirY,
+                speed: 12,
+                size: 24,
+                el: bulletEl
+            });
         }
 
-        setInterval(() => {
-            if (gameStarted && !gameOver && snake.active) {
-                snake.speed += 0.15;
+        shootBtn.addEventListener("pointerdown", (e) => {
+            e.preventDefault();
+            shoot();
+        });
+
+        /* ---------- JOYSTICK & CONTROLS ---------- */
+        function initJoystick() {
+            let startX = 0,
+                startY = 0;
+            const maxRadius = 45;
+
+            function handleStart(clientX, clientY, touchId = null) {
+                if (!gameStarted || gameOver) return;
+                isJoystickActive = true;
+                activeTouchId = touchId;
+                startX = clientX;
+                startY = clientY;
+
+                joystickZone.style.left = startX + "px";
+                joystickZone.style.top = startY + "px";
+                joystickZone.style.display = "block";
+                joystickStick.style.transform = `translate(-50%, -50%)`;
+                joystickVector = {
+                    x: 0,
+                    y: 0
+                };
             }
-        }, 5000);
 
-        /* ---------- Hiệu ứng Spark ---------- */
-        function createSparks(x, y, color) {
-            for (let i = 0; i < 6; i++) {
-                const spark = document.createElement("div");
-                spark.className = "spark";
-                spark.style.background = color || "gold";
-                spark.style.left = (x + (Math.random() - 0.5) * 40) + "px";
-                spark.style.top = (y + (Math.random() - 0.5) * 40) + "px";
-                gameEl.appendChild(spark);
-                setTimeout(() => spark.remove(), 500);
+            function handleMove(clientX, clientY) {
+                if (!isJoystickActive) return;
+                const dx = clientX - startX;
+                const dy = clientY - startY;
+                const dist = Math.hypot(dx, dy);
+
+                if (dist === 0) {
+                    joystickVector = {
+                        x: 0,
+                        y: 0
+                    };
+                    return;
+                }
+
+                const clamped = Math.min(dist, maxRadius);
+                const angle = Math.atan2(dy, dx);
+                const moveX = Math.cos(angle) * clamped;
+                const moveY = Math.sin(angle) * clamped;
+
+                joystickStick.style.transform = `translate(calc(-50% + ${moveX}px), calc(-50% + ${moveY}px))`;
+                joystickVector = {
+                    x: moveX / maxRadius,
+                    y: moveY / maxRadius
+                };
             }
-        }
 
-        /* =======================================================================
-           XỬ LÝ CẦN ĐIỀU KHIỂN TRÒN (JOYSTICK TOUCH/MOUSE)
-           ======================================================================= */
-        let joystickTouchId = null;
+            function handleEnd() {
+                isJoystickActive = false;
+                activeTouchId = null;
+                joystickVector = {
+                    x: 0,
+                    y: 0
+                };
+                joystickZone.style.display = "none";
+            }
 
-        function handleJoystickStart(e) {
-            if (gameOver) return;
-            const touch = e.changedTouches ? e.changedTouches[0] : e;
-            if (joystickTouchId !== null && e.changedTouches) return;
+            gameEl.addEventListener("touchstart", (e) => {
+                if (isJoystickActive || e.target === shootBtn) return;
+                const t = e.changedTouches[0];
+                handleStart(t.clientX, t.clientY, t.identifier);
+            }, {
+                passive: false
+            });
 
-            if (e.changedTouches) joystickTouchId = touch.identifier;
-            isJoystickActive = true;
-            handleJoystickMove(e);
-        }
-
-        function handleJoystickMove(e) {
-            if (!isJoystickActive) return;
-
-            let touch = null;
-            if (e.changedTouches) {
+            gameEl.addEventListener("touchmove", (e) => {
+                if (!isJoystickActive) return;
                 for (let i = 0; i < e.changedTouches.length; i++) {
-                    if (e.changedTouches[i].identifier === joystickTouchId) {
-                        touch = e.changedTouches[i];
+                    if (e.changedTouches[i].identifier === activeTouchId) {
+                        handleMove(e.changedTouches[i].clientX, e.changedTouches[i].clientY);
                         break;
                     }
                 }
-                if (!touch) return;
-            } else {
-                touch = e;
-            }
+            }, {
+                passive: false
+            });
 
-            const rect = joystickZone.getBoundingClientRect();
-            const centerX = rect.left + rect.width / 2;
-            const centerY = rect.top + rect.height / 2;
+            gameEl.addEventListener("touchend", handleEnd);
+            gameEl.addEventListener("touchcancel", handleEnd);
 
-            let dx = touch.clientX - centerX;
-            let dy = touch.clientY - centerY;
-
-            const maxRadius = rect.width / 2;
-            const distance = Math.hypot(dx, dy);
-
-            if (distance > maxRadius) {
-                dx = (dx / distance) * maxRadius;
-                dy = (dy / distance) * maxRadius;
-            }
-
-            joystickStick.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
-            joystickVector.x = dx / maxRadius;
-            joystickVector.y = dy / maxRadius;
+            gameEl.addEventListener("mousedown", (e) => {
+                if (e.button !== 0 || e.target === shootBtn) return;
+                handleStart(e.clientX, e.clientY);
+            });
+            window.addEventListener("mousemove", (e) => {
+                if (isJoystickActive && !activeTouchId) handleMove(e.clientX, e.clientY);
+            });
+            window.addEventListener("mouseup", () => {
+                if (isJoystickActive && !activeTouchId) handleEnd();
+            });
         }
+        initJoystick();
 
-        function handleJoystickEnd(e) {
-            if (e.changedTouches) {
-                let touchFound = false;
-                for (let i = 0; i < e.changedTouches.length; i++) {
-                    if (e.changedTouches[i].identifier === joystickTouchId) {
-                        touchFound = true;
-                        break;
-                    }
-                }
-                if (!touchFound) return;
-            }
-
-            isJoystickActive = false;
-            joystickTouchId = null;
-            joystickVector = {
-                x: 0,
-                y: 0
-            };
-            joystickStick.style.transform = "translate(-50%, -50%)";
-        }
-
-        joystickZone.addEventListener("touchstart", handleJoystickStart, {
-            passive: false
-        });
-        window.addEventListener("touchmove", handleJoystickMove, {
-            passive: false
-        });
-        window.addEventListener("touchend", handleJoystickEnd, {
-            passive: false
-        });
-        window.addEventListener("touchcancel", handleJoystickEnd, {
-            passive: false
-        });
-
-        joystickZone.addEventListener("mousedown", handleJoystickStart);
-        window.addEventListener("mousemove", handleJoystickMove);
-        window.addEventListener("mouseup", handleJoystickEnd);
-
-        /* ---------- Điều khiển Bàn Phím ---------- */
-        window.addEventListener("keydown", (e) => {
+        /* ---------- KEYBOARD CONTROLS ---------- */
+        window.addEventListener("keydown", e => {
             if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") keys.up = true;
             if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") keys.down = true;
             if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") keys.left = true;
             if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") keys.right = true;
+            if (e.key === " " || e.key === "Enter") shoot();
         });
 
-        window.addEventListener("keyup", (e) => {
+        window.addEventListener("keyup", e => {
             if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") keys.up = false;
             if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") keys.down = false;
             if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") keys.left = false;
             if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") keys.right = false;
         });
 
-        /* ---------- Xử lý Game Over & Chiến Thắng ---------- */
-        function endGame(won) {
-            gameOver = true;
-            gameWon = won;
+        /* ---------- COLLISION DETECT ---------- */
+        function isColliding(rect1, rect2) {
+            return (
+                rect1.x < rect2.x + rect2.size &&
+                rect1.x + rect1.size > rect2.x &&
+                rect1.y < rect2.y + rect2.size &&
+                rect1.y + rect1.size > rect2.y
+            );
+        }
 
-            saveScoreToLeaderboard(player.power, player.bananaCount, won);
-            renderLeaderboard();
-
-            overlay.style.display = "flex";
-            if (won) {
-                soundVictory();
-                overlayTitle.textContent = "🎉 CHIẾN THẮNG RỰC RỠ!";
-                overlayText.innerHTML = `Khỉ đã đạt <b>${player.power}</b> Sức mạnh & tiêu diệt Rắn Khổng Lồ!<br>Số chuối đã ăn: <b>${player.bananaCount}</b> 🍌`;
-            } else {
-                soundGameOver();
-                overlayTitle.textContent = "☠️ GAME OVER!";
-                overlayText.innerHTML = `Bạn đã bị Rắn Khổng Lồ xé xác!<br>Sức mạnh đạt được: <b>${player.power}</b> | Chuối ăn: <b>${player.bananaCount}</b>`;
+        function createSparks(x, y, color = "gold") {
+            for (let i = 0; i < 5; i++) {
+                const sp = document.createElement("div");
+                sp.className = "spark";
+                sp.style.background = color;
+                sp.style.left = (x + Math.random() * 20 - 10) + "px";
+                sp.style.top = (y + Math.random() * 20 - 10) + "px";
+                worldEl.appendChild(sp);
+                setTimeout(() => sp.remove(), 400);
             }
         }
 
-        /* ---------- Vòng lặp cập nhật Game ---------- */
-        function update() {
-            if (!gameStarted || gameOver) {
-                requestAnimationFrame(update);
-                return;
+        /* ---------- GAME LOOP & UPDATES ---------- */
+        function updatePlayer() {
+            let dx = 0,
+                dy = 0;
+
+            if (keys.up) dy -= 1;
+            if (keys.down) dy += 1;
+            if (keys.left) dx -= 1;
+            if (keys.right) dx += 1;
+
+            if (dx !== 0 && dy !== 0) {
+                dx *= 0.7071;
+                dy *= 0.7071;
             }
-
-            const now = Date.now();
-
-            /* Hết hiệu ứng Sting */
-            if (player.boosted && now > player.boostEndTime) {
-                player.boosted = false;
-                player.speed = player.baseSpeed;
-                playerEl.classList.remove("sting-boost");
-            }
-
-            /* Di chuyển Nhân vật */
-            let moveX = 0;
-            let moveY = 0;
-
-            if (keys.up) moveY -= 1;
-            if (keys.down) moveY += 1;
-            if (keys.left) moveX -= 1;
-            if (keys.right) moveX += 1;
 
             if (isJoystickActive) {
-                moveX = joystickVector.x;
-                moveY = joystickVector.y;
+                dx = joystickVector.x;
+                dy = joystickVector.y;
             }
 
-            if (moveX !== 0 || moveY !== 0) {
+            if (Math.abs(dx) > 0.1 || Math.abs(dy) > 0.1) {
+                const len = Math.hypot(dx, dy);
+                player.lastDirX = dx / len;
+                player.lastDirY = dy / len;
                 playerEl.classList.add("walking");
-                let nextX = player.x + moveX * player.speed;
-                let nextY = player.y + moveY * player.speed;
-
-                nextX = Math.max(0, Math.min(window.innerWidth - player.size, nextX));
-                nextY = Math.max(0, Math.min(window.innerHeight - player.size, nextY));
-
-                if (!collidesObstacle(nextX, player.y, player.size)) player.x = nextX;
-                if (!collidesObstacle(player.x, nextY, player.size)) player.y = nextY;
             } else {
                 playerEl.classList.remove("walking");
             }
 
+            player.x += dx * player.speed;
+            player.y += dy * player.speed;
+
+            const bounds = getMapBounds();
+            player.x = Math.max(0, Math.min(bounds.width - player.size, player.x));
+            player.y = Math.max(0, Math.min(bounds.height - player.size, player.y));
+
             playerEl.style.left = player.x + "px";
             playerEl.style.top = player.y + "px";
 
-            /* Va chạm Chuối */
-            for (let i = bananas.length - 1; i >= 0; i--) {
-                const b = bananas[i];
-                if (dist(player.x + player.size / 2, player.y + player.size / 2, b.x + b.size / 2, b.y + b.size / 2) < player.size / 2 + b.size / 2) {
+            // Camera cuộn
+            const camX = Math.min(0, Math.max(window.innerWidth - bounds.width, window.innerWidth / 2 - (player.x + player.size / 2)));
+            const camY = Math.min(0, Math.max(window.innerHeight - bounds.height, window.innerHeight / 2 - (player.y + player.size / 2)));
+            worldEl.style.transform = `translate3d(${camX}px, ${camY}px, 0px)`;
+        }
+
+        function updateBullets() {
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                const b = bullets[i];
+                b.x += b.dirX * b.speed;
+                b.y += b.dirY * b.speed;
+                b.el.style.left = b.x + "px";
+                b.el.style.top = b.y + "px";
+
+                let hit = false;
+
+                // Va chạm quái vật
+                for (let j = monsters.length - 1; j >= 0; j--) {
+                    const m = monsters[j];
+                    if (isColliding(b, m)) {
+                        m.hp--;
+                        m.hpInner.style.width = (m.hp / m.maxHp * 100) + "%";
+                        createSparks(m.x, m.y, "red");
+                        playSound(300, 600, 0.1, "sine");
+
+                        if (m.hp <= 0) {
+                            createSparks(m.x, m.y, "orange");
+                            m.el.remove();
+                            monsters.splice(j, 1);
+                            player.kills++;
+                            player.power += 300; // Thưởng điểm khi diệt quái
+
+                            setTimeout(spawnMonster, 4000);
+                        }
+
+                        hit = true;
+                        break;
+                    }
+                }
+
+                const bounds = getMapBounds();
+                if (hit || b.x < 0 || b.x > bounds.width || b.y < 0 || b.y > bounds.height) {
                     b.el.remove();
-                    bananas.splice(i, 1);
+                    bullets.splice(i, 1);
+                }
+            }
+        }
 
+        function updateMonsters() {
+            if (hitCooldown > 0) hitCooldown--;
+
+            monsters.forEach(m => {
+                const dx = player.x - m.x;
+                const dy = player.y - m.y;
+                const dist = Math.hypot(dx, dy);
+
+                if (dist > 0 && dist < 800) {
+                    m.x += (dx / dist) * m.speed;
+                    m.y += (dy / dist) * m.speed;
+                }
+
+                m.el.style.left = m.x + "px";
+                m.el.style.top = m.y + "px";
+
+                // Va chạm Khỉ với Quái -> Bị trừ 50 điểm sức mạnh
+                if (isColliding(player, m) && hitCooldown <= 0) {
+                    player.power -= 50;
+                    hitCooldown = 20;
+                    playSound(150, 50, 0.2, "sawtooth");
+
+                    playerEl.classList.add("hit-effect");
+                    setTimeout(() => playerEl.classList.remove("hit-effect"), 300);
+
+                    player.x += (player.x < m.x ? -20 : 20);
+                    player.y += (player.y < m.y ? -20 : 20);
+
+                    if (player.power <= 0) {
+                        player.power = 0;
+                        triggerLose();
+                    }
+                }
+            });
+        }
+
+        function checkCollisions() {
+            // Ăn Chuối -> Được cộng 100 điểm sức mạnh
+            bananas.forEach(b => {
+                if (isColliding(player, b)) {
+                    player.power += BANANA_POWER_REWARD;
                     player.bananaCount++;
-                    player.power += 50;
-                    soundMonkey();
+                    playSound(400, 800, 0.1, "sine");
 
-                    playerEl.classList.remove("eat-effect");
-                    void playerEl.offsetWidth;
                     playerEl.classList.add("eat-effect");
+                    setTimeout(() => playerEl.classList.remove("eat-effect"), 300);
 
-                    createSparks(b.x, b.y, "#ffd700");
-                    spawnBanana();
+                    const pos = randomPos(b.size);
+                    b.x = pos.x;
+                    b.y = pos.y;
+                    b.el.style.left = b.x + "px";
+                    b.el.style.top = b.y + "px";
 
-                    if (player.power >= 500 && !snake.active) {
-                        spawnSnake();
-                    }
+                    createSparks(player.x, player.y, "yellow");
 
-                    if (player.power >= WIN_POWER) {
-                        endGame(true);
-                    }
+                    if (player.power >= WIN_POWER) triggerWin();
                 }
+            });
+
+            // Ăn Sting -> Tăng tốc
+            if (sting.active && isColliding(player, sting)) {
+                playSound(600, 1200, 0.2, "triangle");
+                player.boosted = true;
+                player.speed = player.baseSpeed * 1.8;
+                player.boostEndTime = Date.now() + 6000;
+                playerEl.classList.add("sting-boost");
+
+                sting.active = false;
+                stingEl.style.display = "none";
+                setTimeout(spawnSting, 12000);
             }
 
-            /* Va chạm Sting */
-            if (sting.active) {
-                if (dist(player.x + player.size / 2, player.y + player.size / 2, sting.x + sting.size / 2, sting.y + sting.size / 2) < player.size / 2 + sting.size / 2) {
-                    sting.active = false;
-                    stingEl.style.display = "none";
-
-                    player.boosted = true;
-                    player.speed = player.baseSpeed * 1.8;
-                    player.boostEndTime = now + 6000;
-
-                    playerEl.classList.add("sting-boost");
-                    soundSting();
-                    createSparks(sting.x, sting.y, "#ff3b3b");
+            // Chướng ngại vật
+            obstacles.forEach(o => {
+                if (isColliding(player, o)) {
+                    player.x += (player.x < o.x ? -4 : 4);
+                    player.y += (player.y < o.y ? -4 : 4);
                 }
+            });
+        }
+
+        function updateBoost() {
+            if (player.boosted && Date.now() > player.boostEndTime) {
+                player.boosted = false;
+                player.speed = player.baseSpeed;
+                playerEl.classList.remove("sting-boost");
             }
+        }
 
-            /* Di chuyển Rắn & Va chạm */
-            if (snake.active) {
-                const sCenterX = snake.x + snake.size / 2;
-                const sCenterY = snake.y + snake.size / 2;
-                const pCenterX = player.x + player.size / 2;
-                const pCenterY = player.y + player.size / 2;
-
-                const angle = Math.atan2(pCenterY - sCenterY, pCenterX - sCenterX);
-                snake.x += Math.cos(angle) * snake.speed;
-                snake.y += Math.sin(angle) * snake.speed;
-
-                snakeEl.style.left = snake.x + "px";
-                snakeEl.style.top = snake.y + "px";
-
-                if (dist(pCenterX, pCenterY, sCenterX, sCenterY) < player.size / 2 + snake.size / 3) {
-                    if (player.power >= WIN_POWER) {
-                        snake.hp = 0;
-                        endGame(true);
-                    } else {
-                        if (now > hitSoundCooldown) {
-                            soundHit();
-                            hitSoundCooldown = now + 400;
-                        }
-                        playerEl.classList.remove("hit-effect");
-                        void playerEl.offsetWidth;
-                        playerEl.classList.add("hit-effect");
-
-                        player.power = Math.max(0, player.power - 15);
-
-                        if (player.power <= 0) {
-                            endGame(false);
-                        }
-                    }
-                }
-            }
-
-            /* Cập nhật HUD */
+        function updateHUD() {
             hudBanana.textContent = player.bananaCount;
             hudPower.textContent = player.power;
-            hudSpeed.textContent = Math.round(player.speed * 10) / 10;
-            hudSnakeHp.textContent = snake.active ? (player.power >= WIN_POWER ? "0 (Đã bị hạ!)" : "Đang tấn công") : "Chưa xuất hiện";
-            powerBar.style.width = Math.min(100, (player.power / WIN_POWER) * 100) + "%";
+            hudSpeed.textContent = player.speed.toFixed(1);
+            hudKills.textContent = player.kills;
 
-            requestAnimationFrame(update);
+            const pct = Math.min(100, (player.power / WIN_POWER) * 100);
+            powerBar.style.width = pct + "%";
         }
 
-        /* ---------- Khởi tạo & Reset Trò chơi ---------- */
-        function initGame() {
+        function gameLoop() {
+            if (gameOver) return;
+
+            updatePlayer();
+            updateBullets();
+            updateMonsters();
+            checkCollisions();
+            updateBoost();
+            updateHUD();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function triggerWin() {
+            gameOver = true;
+            saveScore(playerName, player.power); // Lưu điểm vào BXH
+            playSound(523, 1046, 0.4, "triangle");
+            overlayTitle.textContent = "🎉 CHIẾN THẮNG! 🎉";
+            overlayText.textContent = `Bạn đã xuất sắc đạt ${player.power} Sức mạnh và tiêu diệt ${player.kills} quái vật!`;
+            overlay.style.display = "flex";
+        }
+
+        function triggerLose() {
+            gameOver = true;
+            saveScore(playerName, player.power); // Lưu điểm vào BXH
+            playSound(200, 60, 0.5, "sawtooth");
+            overlayTitle.textContent = "💀 BẠN ĐÃ THẤT BẠI 💀";
+            overlayText.textContent = `Sức mạnh về 0. Điểm đạt được: ${player.power}. Tiêu diệt: ${player.kills} quái vật!`;
+            overlay.style.display = "flex";
+        }
+
+        function resetGame() {
             gameOver = false;
-            gameWon = false;
-
-            player.x = 100;
-            player.y = 100;
-            player.power = 0;
+            player.x = 500;
+            player.y = 500;
+            player.power = 100;
             player.bananaCount = 0;
-            player.boosted = false;
+            player.kills = 0;
             player.speed = player.baseSpeed;
+            player.boosted = false;
+            playerEl.classList.remove("sting-boost");
 
-            snake.active = false;
-            snake.speed = isMobile ? 2.2 : 2.8;
-            snake.x = -200;
-            snake.y = -200;
+            bulletsEl.innerHTML = "";
+            bullets.length = 0;
 
-            sting.active = false;
-
-            snakeEl.style.display = "none";
-            stingEl.style.display = "none";
             overlay.style.display = "none";
-            warningEl.style.display = "none";
-
-            playerEl.classList.remove("sting-boost", "hit-effect", "eat-effect");
-
-            if (playerName) {
-                hudName.textContent = playerName;
-                hudNameRow.style.display = "inline";
-            } else {
-                hudNameRow.style.display = "none";
-            }
-
-            createObstacles();
-            createBananas();
+            initEntities();
+            gameLoop();
         }
 
-        function startGame() {
+        /* ---------- EVENT LISTENERS ---------- */
+        btnPlay.addEventListener("click", () => {
             getAudioCtx();
-            initGame();
             homeScreen.style.display = "none";
             gameEl.style.display = "block";
             gameStarted = true;
-            startMusic();
-        }
+            resetGame();
+        });
 
-        /* ---------- Sự kiện Giao diện Trang chủ & Modal ---------- */
-        btnPlay.addEventListener("click", startGame);
+        restartBtn.addEventListener("click", resetGame);
+
+        // Bảng Xếp Hạng Events
+        function openLeaderboard() {
+            renderLeaderboard();
+            leaderboardModal.style.display = "flex";
+        }
+        btnLeaderboardHome.addEventListener("click", openLeaderboard);
+        overlayLeaderboardBtn.addEventListener("click", openLeaderboard);
+        leaderboardCloseBtn.addEventListener("click", () => leaderboardModal.style.display = "none");
 
         btnName.addEventListener("click", () => {
             nameInput.value = playerName;
             nameModal.style.display = "flex";
         });
 
-        nameCloseBtn.addEventListener("click", () => {
-            nameModal.style.display = "none";
-        });
-
+        nameCloseBtn.addEventListener("click", () => nameModal.style.display = "none");
         nameSaveBtn.addEventListener("click", () => {
-            playerName = nameInput.value.trim();
-            try {
-                localStorage.setItem("monkeyPlayerName", playerName);
-            } catch (e) {}
-            refreshNamePreview();
+            playerName = nameInput.value.trim().slice(0, 16);
+            localStorage.setItem("monkeyPlayerName", playerName);
+            updateNamePreview();
             nameModal.style.display = "none";
         });
 
-        btnSettings.addEventListener("click", () => {
-            settingsModal.style.display = "flex";
-        });
-
-        settingsCloseBtn.addEventListener("click", () => {
-            settingsModal.style.display = "none";
-        });
-
-        sfxEnabledInput.addEventListener("change", (e) => {
-            sfxEnabled = e.target.checked;
-        });
-        sfxVolumeInput.addEventListener("input", (e) => {
-            sfxVolume = e.target.value / 100;
-        });
-        musicEnabledInput.addEventListener("change", (e) => {
-            musicEnabled = e.target.checked;
-        });
-        musicVolumeInput.addEventListener("input", (e) => {
-            musicVolume = e.target.value / 100;
-        });
-
-        restartBtn.addEventListener("click", () => {
-            initGame();
-        });
-
-        /* Chạy vòng lặp render */
-        requestAnimationFrame(update);
+        btnSettings.addEventListener("click", () => settingsModal.style.display = "flex");
+        settingsCloseBtn.addEventListener("click", () => settingsModal.style.display = "none");
     </script>
-
 </body>
 
 </html>
