@@ -228,6 +228,21 @@
             width: 100%;
             background: #ff3b3b;
         }
+        /* ===================== BOSS QUÁI VẬT ===================== */
+        
+        .boss-monster {
+            font-size: 90px !important;
+            filter: drop-shadow(0 4px 6px rgba(0, 0, 0, .5)) drop-shadow(0 0 18px rgba(255, 60, 0, .7));
+        }
+        
+        .boss-monster .monster-hp-bar {
+            width: 70px;
+            height: 8px;
+        }
+        
+        .boss-monster .monster-hp-inner {
+            background: linear-gradient(90deg, gold, #ff3b3b);
+        }
         
         @keyframes monsterWiggle {
             from {
@@ -290,9 +305,98 @@
         
         .power-bar-inner {
             height: 100%;
-            width: 0%;
+            width: 100%;
             background: linear-gradient(90deg, #ffb347, #ff3b3b);
             transition: width .25s;
+        }
+        /* ===================== THANH MÁU (HP BAR) ===================== */
+        
+        .hp-bar-outer {
+            margin-top: 4px;
+            width: 100%;
+            height: 8px;
+            background: #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        
+        .hp-bar-inner {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg, #66ff66, #16a34a);
+            transition: width .25s;
+        }
+        /* ===================== THANH KINH NGHIỆM (XP BAR) ===================== */
+        
+        .xp-bar-outer {
+            margin-top: 4px;
+            width: 100%;
+            height: 8px;
+            background: #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        
+        .xp-bar-inner {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #7dd3fc, #4338ca);
+            transition: width .25s;
+        }
+        /* ===================== THẺ CHỌN KỸ NĂNG KHI LÊN CẤP ===================== */
+        
+        .skill-card-options {
+            display: flex;
+            gap: 12px;
+            margin: 15px 0;
+        }
+        
+        .skill-card {
+            flex: 1;
+            background: #f7f7f7;
+            border: 2px solid #ddd;
+            border-radius: 16px;
+            padding: 16px 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: transform .15s ease, border-color .15s ease, background .15s ease;
+        }
+        
+        .skill-card:hover,
+        .skill-card:active {
+            transform: translateY(-4px);
+            border-color: #4caf6a;
+            background: #f0fff4;
+        }
+        
+        .skill-card .skill-icon {
+            font-size: 36px;
+            margin-bottom: 8px;
+        }
+        
+        .skill-card .skill-title {
+            font-weight: bold;
+            color: #2f8f4e;
+            margin-bottom: 4px;
+            font-size: 14px;
+        }
+        
+        .skill-card .skill-desc {
+            font-size: 12px;
+            color: #666;
+            line-height: 1.35;
+        }
+        
+        @media (max-width: 600px) {
+            .skill-card-options {
+                gap: 8px;
+            }
+            .skill-card {
+                padding: 12px 6px;
+            }
+            .skill-card .skill-icon {
+                font-size: 28px;
+            }
         }
         /* ===================== NÚT BẮN (SHOOT BUTTON) ===================== */
         
@@ -595,7 +699,7 @@
         <div class="home-card">
             <div class="home-title">🐒 KHỈ SINH TỒN</div>
             <div class="home-tagline">
-                Bắn tiêu diệt Rắn, Hổ, Cá sấu, Lợn rừng!<br> Ăn chuối (+100 Sức mạnh). Đạt 10.000 điểm để thắng!
+                Bắn tiêu diệt Rắn, Hổ, Cá sấu, Lợn rừng!<br> Ăn chuối tăng Kinh nghiệm. Sống sót càng lâu, cấp càng cao — Boss xuất hiện mỗi 5 cấp!
             </div>
 
             <button class="home-btn btn-play" id="btnPlay">🎮 CHƠI</button>
@@ -642,6 +746,16 @@
         </div>
     </div>
 
+    <!-- MODAL CHỌN THẺ KỸ NĂNG KHI LÊN CẤP -->
+    <div class="modal-overlay" id="skillCardModal">
+        <div class="modal-box" style="width:min(94vw, 460px);">
+            <h2>🎉 Lên Cấp! Chọn Kỹ Năng 🎉</h2>
+            <div class="skill-card-options" id="skillCardOptions">
+                <!-- 2 thẻ kỹ năng ngẫu nhiên sẽ render tự động ở đây -->
+            </div>
+        </div>
+    </div>
+
     <!-- MÀN HÌNH GAME -->
     <div id="game">
         <div id="world">
@@ -659,9 +773,17 @@
 
         <!-- HUD UI -->
         <div class="hud">
-            🍌 Chuối: <b id="hudBanana">0</b><br> 💪 Sức mạnh: <b id="hudPower">0</b> / 10000<br>
+            🍌 Chuối: <b id="hudBanana">0</b><br> 💪 Sức mạnh: <b id="hudPower">50</b><br>
             <div class="power-bar-outer">
                 <div class="power-bar-inner" id="powerBar"></div>
+            </div>
+            ❤️ Máu: <b id="hudHp">100</b> / <span id="hudMaxHp">100</span><br>
+            <div class="hp-bar-outer">
+                <div class="hp-bar-inner" id="hpBar"></div>
+            </div>
+            🌟 Cấp: <b id="hudLevel">1</b> | Kinh nghiệm: <b id="hudXp">0</b> / <b id="hudXpNeeded">100</b><br>
+            <div class="xp-bar-outer">
+                <div class="xp-bar-inner" id="xpBar"></div>
             </div>
             ⚡ Tốc độ: <b id="hudSpeed">5</b><br> 👾 Quái tiêu diệt: <b id="hudKills">0</b>
         </div>
@@ -703,6 +825,13 @@
         const hudSpeed = document.getElementById("hudSpeed");
         const hudKills = document.getElementById("hudKills");
         const powerBar = document.getElementById("powerBar");
+        const hudHp = document.getElementById("hudHp");
+        const hudMaxHp = document.getElementById("hudMaxHp");
+        const hpBar = document.getElementById("hpBar");
+        const hudLevel = document.getElementById("hudLevel");
+        const hudXp = document.getElementById("hudXp");
+        const hudXpNeeded = document.getElementById("hudXpNeeded");
+        const xpBar = document.getElementById("xpBar");
 
         const shootBtn = document.getElementById("shootBtn");
         const overlay = document.getElementById("overlay");
@@ -730,6 +859,9 @@
         const settingsModal = document.getElementById("settingsModal");
         const settingsCloseBtn = document.getElementById("settingsCloseBtn");
 
+        const skillCardModal = document.getElementById("skillCardModal");
+        const skillCardOptions = document.getElementById("skillCardOptions");
+
         const joystickZone = document.getElementById("joystick-zone");
         const joystickStick = document.getElementById("joystick-stick");
 
@@ -747,602 +879,854 @@
             x: 500,
             y: 500,
             size: isMobile ? 60 : 90,
-            baseSpeed: isMobile ? 4 : 5,
-            speed: isMobile ? 4 : 5,
-            power: 100, // Khởi đầu với 100 điểm
+            baseSpeed: isMobile ? 3 : 5,
+            speed: isMobile ? 3 : 5,
+            power: 50, // Mặc định 50 điểm sức mạnh
+            maxHp: 100, // Máu tối đa
+            hp: 100, // Máu hiện tại
+            level: 1, // Cấp độ hiện tại
+            xp: 0, // Kinh nghiệm hiện tại
+            xpNeeded: 100, // Kinh nghiệm cần để lên cấp tiếp theo
             bananaCount: 0,
             kills: 0,
             boosted: false,
             boostEndTime: 0,
+            autoAim: false, // Tự động nhắm quái (kỹ năng)
+            bulletSpeedMultiplier: 1, // Tăng thêm khi trùng thẻ Tự Động Nhắm
+            skillCounts: {}, // Đếm số lần đã chọn từng loại thẻ kỹ năng
             lastDirX: 1, // Hướng nhìn mặc định
             lastDirY: 0
         };
 
-        const WIN_POWER = 10000; // Thay đổi mục tiêu thắng thành 10000 điểm
-        const BANANA_POWER_REWARD = 100; // Ăn chuối được 100 điểm
-        const keys = {
-            up: false,
-            down: false,
-            left: false,
-            right: false
-        };
-        let joystickVector = {
-            x: 0,
-            y: 0
-        };
-        let isJoystickActive = false;
-        let activeTouchId = null;
+        const WIN_POWER = 10000;
+        const BANANA_XP_REWARD = 50; // Ăn chuối cộng 50 điểm kinh nghiệm
+        const MONSTER_HP_DAMAGE = 10; // Mỗi lần quái thường đánh trúng, mất 10 máu
+        const MONSTER_XP_REWARD = 25; // Giết quái được 25 điểm kinh nghiệm
+        const LEVEL_UP_HEAL = 10; // Mỗi lần lên cấp hồi 10 máu
+        const LEVEL_UP_XP_STEP = 100; // Mỗi cấp cần thêm 100 điểm kinh nghiệm so với cấp trước
+        const LEVEL_UP_POWER = 5; // Mỗi lần lên cấp cộng thêm 5 điểm sức mạnh
+        const BOSS_INTERVAL = 5; // Boss xuất hiện định kỳ mỗi 5 cấp (Cấp 5, 10, 15, 20...)
+        const BASE_BOSS_HP = 500; // Máu Boss ở đợt đầu tiên (Cấp 5)
+        const BOSS_HP_STEP = 500; // Mỗi đợt Boss tiếp theo tăng thêm 500 máu
+        const BOSS_ATTACK_DAMAGE = 20; // Sức mạnh của Boss là 20
+        const SKILL_STACK_BONUS = 0.25;
+        const MONSTER_SPEED_MULTIPLIER = isMobile ? 0.65 : 1;
 
-        let gameOver = false;
-        let gameStarted = false;
-        let hitCooldown = 0;
+        // Danh sách thẻ kỹ năng có thể xuất hiện khi lên cấp
+        const SKILL_CARDS = [{
+            id: 'heal50',
+            weight: 30,
+            icon: '❤️‍🩹',
+            title: 'Hồi Phục Tức Thì',
+            desc: 'Hồi ngay 50 máu (trùng thẻ +25% mỗi lần)',
+            apply: (count) => {
+                const amount = 50 * (1 + SKILL_STACK_BONUS * count);
+                player.hp = Math.min(player.maxHp, player.hp + amount);
+            }
+        }, {
+            id: 'maxhp25',
+            weight: 30,
+            icon: '💪',
+            title: 'Thể Lực Dồi Dào',
+            desc: 'Tăng 25% máu của 100 máu mặc định (+25 máu)',
+            apply: (count) => {
+                const inc = 25; // Tăng 25% của 100 máu mặc định
+                player.maxHp += inc;
+                player.hp += inc;
+            }
+        }, {
+            id: 'addpower20',
+            weight: 50, // Tỉ lệ 50%
+            icon: '⚔️',
+            title: 'Cường Hóa Sức Mạnh',
+            desc: 'Cộng thêm 20 điểm sức mạnh',
+            apply: (count) => {
+                player.power += 20;
+            }
+        }, {
+            id: 'percentpower10',
+            weight: 30,
+            icon: '🔥',
+            title: 'Sức Mạnh Bộc Phát',
+            desc: 'Cộng thêm 10% sức mạnh hiện có',
+            apply: (count) => {
+                player.power = Math.round(player.power * 1.10);
+            }
+        }, {
+            id: 'autoaim',
+            weight: 15,
+            icon: '🎯',
+            title: 'Tự Động Nhắm',
+            desc: 'Đạn tự động bay về quái gần nhất (trùng thẻ +25% tốc độ đạn)',
+            apply: (count) => {
+                player.autoAim = true;
+                if (count > 0) {
+                    player.bulletSpeedMultiplier += SKILL_STACK_BONUS;
+                }
+            }
+        }, {
+            id: 'maxhp10',
+            weight: 25,
+            icon: '🛡️',
+            title: 'Sức Bền Vượt Trội',
+            desc: 'Tăng 10% máu tối đa (trùng thẻ +25% mỗi lần)',
+            apply: (count) => {
+                const percent = 0.10 * (1 + SKILL_STACK_BONUS * count);
+                const inc = Math.round(player.maxHp * percent);
+                player.maxHp += inc;
+                player.hp += inc;
+            }
+        }];
 
-        /* ---------- LEADERBOARD SYSTEM (BẢNG XẾP HẠNG) ---------- */
-        function getLeaderboard() {
-            const data = localStorage.getItem("monkeyLeaderboard");
-            return data ? JSON.parse(data) : [];
+        // Chọn ngẫu nhiên "count" thẻ không trùng nhau
+        function pickWeightedCards(pool, count) {
+            const available = pool.slice();
+            const picked = [];
+            for (let n = 0; n < count && available.length > 0; n++) {
+                const totalWeight = available.reduce((sum, c) => sum + c.weight, 0);
+                let r = Math.random() * totalWeight;
+                let idx = 0;
+                for (; idx < available.length; idx++) {
+                    r -= available[idx].weight;
+                    if (r <= 0) break;
+                }
+                if (idx >= available.length) idx = available.length - 1;
+                picked.push(available[idx]);
+                available.splice(idx, 1);
+            }
+            return picked;
         }
 
-        function saveScore(name, score) {
+        let isGameOver = false;
+        let isGamePaused = false;
+        let bananas = [];
+        let obstacles = [];
+        let monsters = [];
+        let bullets = [];
+        let stingItem = {
+            x: 0,
+            y: 0,
+            active: false
+        };
+
+        const keys = {};
+        let touchJoystick = {
+            active: false,
+            startX: 0,
+            startY: 0,
+            moveX: 0,
+            moveY: 0
+        };
+
+        /* ---------- LEADERBOARD HELPERS ---------- */
+        function getLeaderboard() {
+            try {
+                return JSON.parse(localStorage.getItem("monkeyLeaderboard")) || [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function saveScore(name, power, kills, level) {
             if (!name) name = "Vô danh";
-            let leaderboard = getLeaderboard();
-
-            // Thêm lượt chơi mới vào bảng
-            leaderboard.push({
+            const board = getLeaderboard();
+            board.push({
                 name,
-                score,
-                date: new Date().toLocaleDateString('vi-VN')
+                power,
+                kills,
+                level,
+                date: new Date().toLocaleDateString("vi-VN")
             });
-
-            // Sắp xếp điểm giảm dần
-            leaderboard.sort((a, b) => b.score - a.score);
-
-            // Chỉ giữ Top 5 điểm cao nhất
-            leaderboard = leaderboard.slice(0, 5);
-
-            localStorage.setItem("monkeyLeaderboard", JSON.stringify(leaderboard));
+            board.sort((a, b) => b.power - a.power);
+            const trimmed = board.slice(0, 10);
+            localStorage.setItem("monkeyLeaderboard", JSON.stringify(trimmed));
         }
 
         function renderLeaderboard() {
-            const leaderboard = getLeaderboard();
+            const board = getLeaderboard();
             leaderboardList.innerHTML = "";
-
-            if (leaderboard.length === 0) {
-                leaderboardList.innerHTML = `<li style="text-align:center; color:#888; padding:15px;">Chưa có dữ liệu xếp hạng</li>`;
+            if (board.length === 0) {
+                leaderboardList.innerHTML = `<li class="leaderboard-item" style="justify-content:center; color:#888;">Chưa có kỷ lục nào</li>`;
                 return;
             }
-
-            leaderboard.forEach((item, index) => {
+            board.forEach((item, index) => {
                 const li = document.createElement("li");
                 li.className = "leaderboard-item";
-                li.innerHTML = `
-                    <span>#${index + 1} <b>${item.name}</b></span>
-                    <span><b>${item.score}</b> điểm</span>
-                `;
+                let badge = `#${index + 1}`;
+                if (index === 0) badge = "🥇 1";
+                else if (index === 1) badge = "🥈 2";
+                else if (index === 2) badge = "🥉 3";
+                li.innerHTML = `<span><b>${badge}</b> ${escapeHtml(item.name)} (Cấp ${item.level || 1})</span> <span>💪 ${item.power} | 👾 ${item.kills}</span>`;
                 leaderboardList.appendChild(li);
             });
         }
 
-        /* ---------- ENTITIES ---------- */
-        const bananas = [];
-        const BANANA_COUNT = 35;
-        const obstacles = [];
-        const OBSTACLE_COUNT = 25;
-        const monsters = [];
-        const MONSTER_COUNT = 20;
-        const bullets = [];
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
 
-        const sting = {
-            x: -1000,
-            y: -1000,
-            size: 46,
-            active: false
+        /* ---------- MODAL CONTROLS ---------- */
+        btnName.onclick = () => {
+            nameInput.value = playerName;
+            nameModal.style.display = "flex";
+        };
+        nameCloseBtn.onclick = () => nameModal.style.display = "none";
+        nameSaveBtn.onclick = () => {
+            playerName = nameInput.value.trim();
+            localStorage.setItem("monkeyPlayerName", playerName);
+            updateNamePreview();
+            nameModal.style.display = "none";
         };
 
-        const MONSTER_TYPES = [{
-            type: 'snake',
-            icon: '🐍',
-            speed: 2.0
-        }, {
-            type: 'tiger',
-            icon: '🐅',
-            speed: 2.8
-        }, {
-            type: 'croc',
-            icon: '🐊',
-            speed: 1.6
-        }, {
-            type: 'boar',
-            icon: '🐗',
-            speed: 2.4
-        }];
+        btnLeaderboardHome.onclick = () => {
+            renderLeaderboard();
+            leaderboardModal.style.display = "flex";
+        };
+        overlayLeaderboardBtn.onclick = () => {
+            renderLeaderboard();
+            leaderboardModal.style.display = "flex";
+        };
+        leaderboardCloseBtn.onclick = () => leaderboardModal.style.display = "none";
 
-        function getMapBounds() {
-            return {
-                width: window.innerWidth * 3,
-                height: window.innerHeight * 3
-            };
+        btnSettings.onclick = () => settingsModal.style.display = "flex";
+        settingsCloseBtn.onclick = () => settingsModal.style.display = "none";
+
+        btnPlay.onclick = startGame;
+        restartBtn.onclick = startGame;
+
+        /* ---------- KHỞI TẠO GAME ---------- */
+        function startGame() {
+            homeScreen.style.display = "none";
+            overlay.style.display = "none";
+            gameEl.style.display = "block";
+
+            // Lấy kích thước thế giới thực tế
+            const worldWidth = window.innerWidth * 3;
+            const worldHeight = window.innerHeight * 3;
+
+            player.x = worldWidth / 2;
+            player.y = worldHeight / 2;
+            player.power = 50; // Mặc định 50
+            player.maxHp = 100;
+            player.hp = 100;
+            player.level = 1;
+            player.xp = 0;
+            player.xpNeeded = 100;
+            player.bananaCount = 0;
+            player.kills = 0;
+            player.boosted = false;
+            player.speed = player.baseSpeed;
+            player.autoAim = false;
+            player.bulletSpeedMultiplier = 1;
+            player.skillCounts = {};
+            player.lastDirX = 1;
+            player.lastDirY = 0;
+
+            isGameOver = false;
+            isGamePaused = false;
+            bullets = [];
+
+            generateWorld();
+            updateHUD();
+
+            requestAnimationFrame(gameLoop);
         }
 
-        function randomPos(size) {
-            const bounds = getMapBounds();
-            return {
-                x: Math.random() * (bounds.width - size - 100) + 50,
-                y: Math.random() * (bounds.height - size - 100) + 50
-            };
-        }
-
-        /* ---------- WEB AUDIO SOUNDS ---------- */
-        let audioCtx = null;
-
-        function getAudioCtx() {
-            if (!audioCtx) audioCtx = new(window.AudioContext || window.webkitAudioContext)();
-            if (audioCtx.state === "suspended") audioCtx.resume();
-            return audioCtx;
-        }
-
-        function playSound(fStart, fEnd, duration, type = "sine") {
-            try {
-                const ctx = getAudioCtx();
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.type = type;
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-                const t0 = ctx.currentTime;
-                osc.frequency.setValueAtTime(fStart, t0);
-                osc.frequency.exponentialRampToValueAtTime(Math.max(20, fEnd), t0 + duration);
-                gain.gain.setValueAtTime(0.15, t0);
-                gain.gain.exponentialRampToValueAtTime(0.001, t0 + duration);
-                osc.start(t0);
-                osc.stop(t0 + duration);
-            } catch (e) {}
-        }
-
-        /* ---------- INIT GAME WORLD ---------- */
-        function initEntities() {
-            // Bananas
+        /* ---------- TẠO BẢN ĐỒ ---------- */
+        function generateWorld() {
             bananasEl.innerHTML = "";
-            bananas.length = 0;
-            for (let i = 0; i < BANANA_COUNT; i++) {
-                const pos = randomPos(40);
-                const el = document.createElement("div");
-                el.className = "banana";
-                el.textContent = "🍌";
-                el.style.left = pos.x + "px";
-                el.style.top = pos.y + "px";
-                bananasEl.appendChild(el);
-                bananas.push({
-                    x: pos.x,
-                    y: pos.y,
-                    size: 40,
-                    el
-                });
+            obstaclesEl.innerHTML = "";
+            monstersEl.innerHTML = "";
+            bulletsEl.innerHTML = "";
+
+            bananas = [];
+            obstacles = [];
+            monsters = [];
+
+            const worldWidth = window.innerWidth * 3;
+            const worldHeight = window.innerHeight * 3;
+
+            // 1. Tạo chuối
+            for (let i = 0; i < 45; i++) {
+                spawnBanana(worldWidth, worldHeight);
             }
 
-            // Obstacles
-            obstaclesEl.innerHTML = "";
-            obstacles.length = 0;
-            const obsIcons = ["🪨", "🪵", "🌵", "🌳"];
-            for (let i = 0; i < OBSTACLE_COUNT; i++) {
-                const pos = randomPos(46);
+            // 2. Tạo chướng ngại vật
+            const obsIcons = ["🪨", "🌳", "🪵", "🪨", "🌴"];
+            for (let i = 0; i < 35; i++) {
+                const x = Math.random() * (worldWidth - 100) + 50;
+                const y = Math.random() * (worldHeight - 100) + 50;
+                if (Math.hypot(x - player.x, y - player.y) < 200) continue;
+
+                const icon = obsIcons[Math.floor(Math.random() * obsIcons.length)];
                 const el = document.createElement("div");
                 el.className = "obstacle";
-                el.textContent = obsIcons[Math.floor(Math.random() * obsIcons.length)];
-                el.style.left = pos.x + "px";
-                el.style.top = pos.y + "px";
+                el.textContent = icon;
+                el.style.left = x + "px";
+                el.style.top = y + "px";
                 obstaclesEl.appendChild(el);
+
                 obstacles.push({
-                    x: pos.x,
-                    y: pos.y,
-                    size: 42,
-                    el
+                    x,
+                    y,
+                    size: 40
                 });
             }
 
-            // Monsters (Rắn, Hổ, Cá Sấu, Lợn Rừng)
-            monstersEl.innerHTML = "";
-            monsters.length = 0;
-            for (let i = 0; i < MONSTER_COUNT; i++) {
-                spawnMonster();
+            // 3. Tạo quái vật
+            const monsterTypes = [{
+                icon: "🐍",
+                speed: 1.8 * MONSTER_SPEED_MULTIPLIER,
+                hp: 30,
+                maxHp: 30
+            }, {
+                icon: "🐅",
+                speed: 2.2 * MONSTER_SPEED_MULTIPLIER,
+                hp: 60,
+                maxHp: 60
+            }, {
+                icon: "🐊",
+                speed: 1.4 * MONSTER_SPEED_MULTIPLIER,
+                hp: 80,
+                maxHp: 80
+            }, {
+                icon: "🐗",
+                speed: 2.0 * MONSTER_SPEED_MULTIPLIER,
+                hp: 50,
+                maxHp: 50
+            }];
+
+            for (let i = 0; i < 22; i++) {
+                spawnMonster(worldWidth, worldHeight, monsterTypes);
             }
 
-            // Sting
-            spawnSting();
+            // 4. Tạo Sting
+            spawnSting(worldWidth, worldHeight);
         }
 
-        function spawnMonster() {
-            const pos = randomPos(50);
-            const template = MONSTER_TYPES[Math.floor(Math.random() * MONSTER_TYPES.length)];
+        function spawnBanana(w, h) {
+            const x = Math.random() * (w - 100) + 50;
+            const y = Math.random() * (h - 100) + 50;
+            const el = document.createElement("div");
+            el.className = "banana";
+            el.textContent = "🍌";
+            el.style.left = x + "px";
+            el.style.top = y + "px";
+            bananasEl.appendChild(el);
+            bananas.push({
+                x,
+                y,
+                el
+            });
+        }
 
+        function spawnMonster(w, h, types) {
+            const x = Math.random() * (w - 120) + 60;
+            const y = Math.random() * (h - 120) + 60;
+            if (Math.hypot(x - player.x, y - player.y) < 350) return;
+
+            const type = types[Math.floor(Math.random() * types.length)];
             const el = document.createElement("div");
             el.className = "monster";
-            el.innerHTML = `${template.icon}<div class="monster-hp-bar"><div class="monster-hp-inner"></div></div>`;
-            el.style.left = pos.x + "px";
-            el.style.top = pos.y + "px";
+
+            const hpBarOuter = document.createElement("div");
+            hpBarOuter.className = "monster-hp-bar";
+            const hpBarInner = document.createElement("div");
+            hpBarInner.className = "monster-hp-inner";
+            hpBarOuter.appendChild(hpBarInner);
+
+            const textNode = document.createTextNode(type.icon);
+            el.appendChild(hpBarOuter);
+            el.appendChild(textNode);
+
+            el.style.left = x + "px";
+            el.style.top = y + "px";
             monstersEl.appendChild(el);
 
             monsters.push({
-                x: pos.x,
-                y: pos.y,
-                size: 50,
-                hp: 2, // 2 Lần đánh/bắn sẽ chết
-                maxHp: 2,
-                speed: template.speed,
-                icon: template.icon,
+                x,
+                y,
+                speed: type.speed,
+                hp: type.hp,
+                maxHp: type.maxHp,
+                icon: type.icon,
                 el,
-                hpInner: el.querySelector(".monster-hp-inner")
+                hpInner: hpBarInner,
+                isBoss: false
             });
         }
 
-        function spawnSting() {
-            const pos = randomPos(sting.size);
-            sting.x = pos.x;
-            sting.y = pos.y;
-            sting.active = true;
-            stingEl.style.left = sting.x + "px";
-            stingEl.style.top = sting.y + "px";
+        /* Spawn Boss Monster xuất hiện mỗi 5 cấp */
+        function spawnBossMonster(w, h, level) {
+            const x = Math.random() * (w - 200) + 100;
+            const y = Math.random() * (h - 200) + 100;
+
+            // Tính số đợt Boss dựa theo cấp độ (Cấp 5 = đợt 1, Cấp 10 = đợt 2, Cấp 15 = đợt 3, ...)
+            const bossWave = Math.floor(level / BOSS_INTERVAL);
+            const bossHp = BASE_BOSS_HP + (bossWave - 1) * BOSS_HP_STEP;
+            const bossIcon = "🦍"; // Khỉ Đột khổng lồ làm Boss
+
+            const el = document.createElement("div");
+            el.className = "monster boss-monster";
+
+            const hpBarOuter = document.createElement("div");
+            hpBarOuter.className = "monster-hp-bar";
+            const hpBarInner = document.createElement("div");
+            hpBarInner.className = "monster-hp-inner";
+            hpBarOuter.appendChild(hpBarInner);
+
+            const textNode = document.createTextNode(bossIcon);
+            el.appendChild(hpBarOuter);
+            el.appendChild(textNode);
+
+            el.style.left = x + "px";
+            el.style.top = y + "px";
+            monstersEl.appendChild(el);
+
+            monsters.push({
+                x,
+                y,
+                speed: 1.6 * MONSTER_SPEED_MULTIPLIER,
+                hp: bossHp,
+                maxHp: bossHp,
+                icon: bossIcon,
+                el,
+                hpInner: hpBarInner,
+                isBoss: true
+            });
+        }
+
+        function spawnSting(w, h) {
+            const x = Math.random() * (w - 100) + 50;
+            const y = Math.random() * (h - 100) + 50;
+            stingItem = {
+                x,
+                y,
+                active: true
+            };
+            stingEl.style.left = x + "px";
+            stingEl.style.top = y + "px";
             stingEl.style.display = "block";
         }
 
-        /* ---------- SHOOTING SYSTEM (BẮN) ---------- */
-        function shoot() {
-            if (gameOver || !gameStarted) return;
-
-            // Tấn công sẽ trừ 50 điểm sức mạnh
-            player.power -= 50;
-            playSound(400, 150, 0.15, "square");
-
-            playerEl.classList.add("hit-effect");
-            setTimeout(() => playerEl.classList.remove("hit-effect"), 200);
-
-            // Kiểm tra hết sức mạnh -> Thua
-            if (player.power <= 0) {
-                player.power = 0;
-                triggerLose();
-                return;
+        /* ---------- BẮN ĐẠN ---------- */
+        // Bắn đạn không tốn điểm sức mạnh
+        shootBtn.onclick = fireBullet;
+        window.addEventListener("keydown", (e) => {
+            if (e.code === "Space") {
+                fireBullet();
             }
+        });
 
-            // Tạo đạn
+        function fireBullet() {
+            if (isGameOver || isGamePaused) return;
+
             let dirX = player.lastDirX;
             let dirY = player.lastDirY;
 
-            if (dirX === 0 && dirY === 0) dirX = 1;
+            // Kỹ năng Tự Động Nhắm: Tự động tìm quái gần nhất
+            if (player.autoAim && monsters.length > 0) {
+                let nearest = null;
+                let minDist = Infinity;
+                monsters.forEach(m => {
+                    const dist = Math.hypot(m.x - player.x, m.y - player.y);
+                    if (dist < minDist) {
+                        minDist = dist;
+                        nearest = m;
+                    }
+                });
+                if (nearest) {
+                    const angle = Math.atan2(nearest.y - player.y, nearest.x - player.x);
+                    dirX = Math.cos(angle);
+                    dirY = Math.sin(angle);
+                }
+            }
 
-            const bulletEl = document.createElement("div");
-            bulletEl.className = "bullet";
-            bulletEl.textContent = "🔥";
+            const baseSpeed = 12;
+            const speed = baseSpeed * player.bulletSpeedMultiplier;
+            const bulletX = player.x + player.size / 2 - 12;
+            const bulletY = player.y + player.size / 2 - 12;
 
-            const startX = player.x + player.size / 2 - 12;
-            const startY = player.y + player.size / 2 - 12;
-
-            bulletEl.style.left = startX + "px";
-            bulletEl.style.top = startY + "px";
-            bulletsEl.appendChild(bulletEl);
+            const el = document.createElement("div");
+            el.className = "bullet";
+            el.textContent = "🔥";
+            el.style.left = bulletX + "px";
+            el.style.top = bulletY + "px";
+            bulletsEl.appendChild(el);
 
             bullets.push({
-                x: startX,
-                y: startY,
-                dirX: dirX,
-                dirY: dirY,
-                speed: 12,
-                size: 24,
-                el: bulletEl
+                x: bulletX,
+                y: bulletY,
+                vx: dirX * speed,
+                vy: dirY * speed,
+                el
             });
         }
 
-        shootBtn.addEventListener("pointerdown", (e) => {
-            e.preventDefault();
-            shoot();
+        /* ---------- INPUT CONTROLS ---------- */
+        window.addEventListener("keydown", (e) => {
+            keys[e.key] = true;
+        });
+        window.addEventListener("keyup", (e) => {
+            keys[e.key] = false;
         });
 
-        /* ---------- JOYSTICK & CONTROLS ---------- */
-        function initJoystick() {
-            let startX = 0,
-                startY = 0;
+        // Touch Joystick Dynamic
+        window.addEventListener("touchstart", (e) => {
+            if (isGameOver || isGamePaused) return;
+            // Tránh kích hoạt khi bấm nút Shoot hoặc Modals
+            if (e.target.closest("#shootBtn") || e.target.closest(".hud") || e.target.closest(".modal-overlay")) return;
+
+            const touch = e.touches[0];
+            touchJoystick.active = true;
+            touchJoystick.startX = touch.clientX;
+            touchJoystick.startY = touch.clientY;
+            touchJoystick.moveX = 0;
+            touchJoystick.moveY = 0;
+
+            joystickZone.style.left = touch.clientX + "px";
+            joystickZone.style.top = touch.clientY + "px";
+            joystickZone.style.display = "block";
+            joystickStick.style.transform = `translate(-50%, -50%)`;
+        });
+
+        window.addEventListener("touchmove", (e) => {
+            if (!touchJoystick.active) return;
+            const touch = e.touches[0];
+            const dx = touch.clientX - touchJoystick.startX;
+            const dy = touch.clientY - touchJoystick.startY;
+            const dist = Math.hypot(dx, dy);
             const maxRadius = 45;
 
-            function handleStart(clientX, clientY, touchId = null) {
-                if (!gameStarted || gameOver) return;
-                isJoystickActive = true;
-                activeTouchId = touchId;
-                startX = clientX;
-                startY = clientY;
+            if (dist === 0) return;
 
-                joystickZone.style.left = startX + "px";
-                joystickZone.style.top = startY + "px";
-                joystickZone.style.display = "block";
-                joystickStick.style.transform = `translate(-50%, -50%)`;
-                joystickVector = {
-                    x: 0,
-                    y: 0
-                };
-            }
+            const angle = Math.atan2(dy, dx);
+            const clampDist = Math.min(dist, maxRadius);
+            const stickX = Math.cos(angle) * clampDist;
+            const stickY = Math.sin(angle) * clampDist;
 
-            function handleMove(clientX, clientY) {
-                if (!isJoystickActive) return;
-                const dx = clientX - startX;
-                const dy = clientY - startY;
-                const dist = Math.hypot(dx, dy);
+            joystickStick.style.transform = `translate(calc(-50% + ${stickX}px), calc(-50% + ${stickY}px))`;
 
-                if (dist === 0) {
-                    joystickVector = {
-                        x: 0,
-                        y: 0
-                    };
-                    return;
-                }
-
-                const clamped = Math.min(dist, maxRadius);
-                const angle = Math.atan2(dy, dx);
-                const moveX = Math.cos(angle) * clamped;
-                const moveY = Math.sin(angle) * clamped;
-
-                joystickStick.style.transform = `translate(calc(-50% + ${moveX}px), calc(-50% + ${moveY}px))`;
-                joystickVector = {
-                    x: moveX / maxRadius,
-                    y: moveY / maxRadius
-                };
-            }
-
-            function handleEnd() {
-                isJoystickActive = false;
-                activeTouchId = null;
-                joystickVector = {
-                    x: 0,
-                    y: 0
-                };
-                joystickZone.style.display = "none";
-            }
-
-            gameEl.addEventListener("touchstart", (e) => {
-                if (isJoystickActive || e.target === shootBtn) return;
-                const t = e.changedTouches[0];
-                handleStart(t.clientX, t.clientY, t.identifier);
-            }, {
-                passive: false
-            });
-
-            gameEl.addEventListener("touchmove", (e) => {
-                if (!isJoystickActive) return;
-                for (let i = 0; i < e.changedTouches.length; i++) {
-                    if (e.changedTouches[i].identifier === activeTouchId) {
-                        handleMove(e.changedTouches[i].clientX, e.changedTouches[i].clientY);
-                        break;
-                    }
-                }
-            }, {
-                passive: false
-            });
-
-            gameEl.addEventListener("touchend", handleEnd);
-            gameEl.addEventListener("touchcancel", handleEnd);
-
-            gameEl.addEventListener("mousedown", (e) => {
-                if (e.button !== 0 || e.target === shootBtn) return;
-                handleStart(e.clientX, e.clientY);
-            });
-            window.addEventListener("mousemove", (e) => {
-                if (isJoystickActive && !activeTouchId) handleMove(e.clientX, e.clientY);
-            });
-            window.addEventListener("mouseup", () => {
-                if (isJoystickActive && !activeTouchId) handleEnd();
-            });
-        }
-        initJoystick();
-
-        /* ---------- KEYBOARD CONTROLS ---------- */
-        window.addEventListener("keydown", e => {
-            if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") keys.up = true;
-            if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") keys.down = true;
-            if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") keys.left = true;
-            if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") keys.right = true;
-            if (e.key === " " || e.key === "Enter") shoot();
+            touchJoystick.moveX = stickX / maxRadius;
+            touchJoystick.moveY = stickY / maxRadius;
         });
 
-        window.addEventListener("keyup", e => {
-            if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") keys.up = false;
-            if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") keys.down = false;
-            if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") keys.left = false;
-            if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") keys.right = false;
-        });
+        const endTouch = () => {
+            touchJoystick.active = false;
+            joystickZone.style.display = "none";
+        };
+        window.addEventListener("touchend", endTouch);
+        window.addEventListener("touchcancel", endTouch);
 
-        /* ---------- COLLISION DETECT ---------- */
-        function isColliding(rect1, rect2) {
-            return (
-                rect1.x < rect2.x + rect2.size &&
-                rect1.x + rect1.size > rect2.x &&
-                rect1.y < rect2.y + rect2.size &&
-                rect1.y + rect1.size > rect2.y
-            );
+        /* ---------- HỆ THỐNG KINH NGHIỆM & LÊN CẤP ---------- */
+        function addXp(amount) {
+            player.xp += amount;
+            while (player.xp >= player.xpNeeded) {
+                player.xp -= player.xpNeeded;
+                player.level++;
+                player.xpNeeded += LEVEL_UP_XP_STEP;
+
+                // Tăng nhẹ 5 sức mạnh & hồi 10 máu mỗi khi lên cấp
+                player.power += LEVEL_UP_POWER;
+                player.hp = Math.min(player.maxHp, player.hp + LEVEL_UP_HEAL);
+
+                // Boss xuất hiện đúng mỗi 5 cấp một lần (Cấp 5, 10, 15, 20...)
+                if (player.level % BOSS_INTERVAL === 0) {
+                    const worldWidth = window.innerWidth * 3;
+                    const worldHeight = window.innerHeight * 3;
+                    spawnBossMonster(worldWidth, worldHeight, player.level);
+                }
+
+                // Hiển thị Modal chọn Thẻ Kỹ Năng
+                triggerSkillCardModal();
+            }
+            updateHUD();
         }
 
-        function createSparks(x, y, color = "gold") {
-            for (let i = 0; i < 5; i++) {
-                const sp = document.createElement("div");
-                sp.className = "spark";
-                sp.style.background = color;
-                sp.style.left = (x + Math.random() * 20 - 10) + "px";
-                sp.style.top = (y + Math.random() * 20 - 10) + "px";
-                worldEl.appendChild(sp);
-                setTimeout(() => sp.remove(), 400);
-            }
+        function triggerSkillCardModal() {
+            isGamePaused = true;
+            skillCardOptions.innerHTML = "";
+
+            // Chọn ngẫu nhiên 2 thẻ kỹ năng từ kho
+            const picked = pickWeightedCards(SKILL_CARDS, 2);
+
+            picked.forEach(card => {
+                const cardEl = document.createElement("div");
+                cardEl.className = "skill-card";
+
+                const count = player.skillCounts[card.id] || 0;
+                let descText = card.desc;
+                if (count > 0) {
+                    descText += ` <b style="color:#2f8f4e;">(Đã chọn ${count} lần)</b>`;
+                }
+
+                cardEl.innerHTML = `
+                    <div class="skill-icon">${card.icon}</div>
+                    <div class="skill-title">${escapeHtml(card.title)}</div>
+                    <div class="skill-desc">${descText}</div>
+                `;
+
+                cardEl.onclick = () => {
+                    const currentCount = player.skillCounts[card.id] || 0;
+                    card.apply(currentCount);
+                    player.skillCounts[card.id] = currentCount + 1;
+
+                    skillCardModal.style.display = "none";
+                    isGamePaused = false;
+                    updateHUD();
+                };
+
+                skillCardOptions.appendChild(cardEl);
+            });
+
+            skillCardModal.style.display = "flex";
         }
 
-        /* ---------- GAME LOOP & UPDATES ---------- */
-        function updatePlayer() {
-            let dx = 0,
-                dy = 0;
+        /* ---------- UPDATE LOOP ---------- */
+        function gameLoop() {
+            if (isGameOver) return;
 
-            if (keys.up) dy -= 1;
-            if (keys.down) dy += 1;
-            if (keys.left) dx -= 1;
-            if (keys.right) dx += 1;
-
-            if (dx !== 0 && dy !== 0) {
-                dx *= 0.7071;
-                dy *= 0.7071;
+            if (!isGamePaused) {
+                updatePlayerPosition();
+                updateBullets();
+                updateMonsters();
+                checkCollisions();
+                updateCamera();
+                updateHUD();
             }
 
-            if (isJoystickActive) {
-                dx = joystickVector.x;
-                dy = joystickVector.y;
+            requestAnimationFrame(gameLoop);
+        }
+
+        function updatePlayerPosition() {
+            let dx = 0;
+            let dy = 0;
+
+            if (keys["ArrowUp"] || keys["w"] || keys["W"]) dy -= 1;
+            if (keys["ArrowDown"] || keys["s"] || keys["S"]) dy += 1;
+            if (keys["ArrowLeft"] || keys["a"] || keys["A"]) dx -= 1;
+            if (keys["ArrowRight"] || keys["d"] || keys["D"]) dx += 1;
+
+            if (touchJoystick.active) {
+                dx = touchJoystick.moveX;
+                dy = touchJoystick.moveY;
             }
 
-            if (Math.abs(dx) > 0.1 || Math.abs(dy) > 0.1) {
-                const len = Math.hypot(dx, dy);
-                player.lastDirX = dx / len;
-                player.lastDirY = dy / len;
+            // Chuẩn hóa vector di chuyển
+            const len = Math.hypot(dx, dy);
+            if (len > 0) {
+                const normX = dx / len;
+                const normY = dy / len;
+
+                player.x += normX * player.speed;
+                player.y += normY * player.speed;
+
+                player.lastDirX = normX;
+                player.lastDirY = normY;
+
                 playerEl.classList.add("walking");
             } else {
                 playerEl.classList.remove("walking");
             }
 
-            player.x += dx * player.speed;
-            player.y += dy * player.speed;
+            // Giới hạn trong bản đồ
+            const worldWidth = window.innerWidth * 3;
+            const worldHeight = window.innerHeight * 3;
+            player.x = Math.max(0, Math.min(worldWidth - player.size, player.x));
+            player.y = Math.max(0, Math.min(worldHeight - player.size, player.y));
 
-            const bounds = getMapBounds();
-            player.x = Math.max(0, Math.min(bounds.width - player.size, player.x));
-            player.y = Math.max(0, Math.min(bounds.height - player.size, player.y));
-
-            playerEl.style.left = player.x + "px";
-            playerEl.style.top = player.y + "px";
-
-            // Camera cuộn
-            const camX = Math.min(0, Math.max(window.innerWidth - bounds.width, window.innerWidth / 2 - (player.x + player.size / 2)));
-            const camY = Math.min(0, Math.max(window.innerHeight - bounds.height, window.innerHeight / 2 - (player.y + player.size / 2)));
-            worldEl.style.transform = `translate3d(${camX}px, ${camY}px, 0px)`;
-        }
-
-        function updateBullets() {
-            for (let i = bullets.length - 1; i >= 0; i--) {
-                const b = bullets[i];
-                b.x += b.dirX * b.speed;
-                b.y += b.dirY * b.speed;
-                b.el.style.left = b.x + "px";
-                b.el.style.top = b.y + "px";
-
-                let hit = false;
-
-                // Va chạm quái vật
-                for (let j = monsters.length - 1; j >= 0; j--) {
-                    const m = monsters[j];
-                    if (isColliding(b, m)) {
-                        m.hp--;
-                        m.hpInner.style.width = (m.hp / m.maxHp * 100) + "%";
-                        createSparks(m.x, m.y, "red");
-                        playSound(300, 600, 0.1, "sine");
-
-                        if (m.hp <= 0) {
-                            createSparks(m.x, m.y, "orange");
-                            m.el.remove();
-                            monsters.splice(j, 1);
-                            player.kills++;
-                            player.power += 300; // Thưởng điểm khi diệt quái
-
-                            setTimeout(spawnMonster, 4000);
-                        }
-
-                        hit = true;
-                        break;
-                    }
-                }
-
-                const bounds = getMapBounds();
-                if (hit || b.x < 0 || b.x > bounds.width || b.y < 0 || b.y > bounds.height) {
-                    b.el.remove();
-                    bullets.splice(i, 1);
-                }
-            }
-        }
-
-        function updateMonsters() {
-            if (hitCooldown > 0) hitCooldown--;
-
-            monsters.forEach(m => {
-                const dx = player.x - m.x;
-                const dy = player.y - m.y;
-                const dist = Math.hypot(dx, dy);
-
-                if (dist > 0 && dist < 800) {
-                    m.x += (dx / dist) * m.speed;
-                    m.y += (dy / dist) * m.speed;
-                }
-
-                m.el.style.left = m.x + "px";
-                m.el.style.top = m.y + "px";
-
-                // Va chạm Khỉ với Quái -> Bị trừ 50 điểm sức mạnh
-                if (isColliding(player, m) && hitCooldown <= 0) {
-                    player.power -= 50;
-                    hitCooldown = 20;
-                    playSound(150, 50, 0.2, "sawtooth");
-
-                    playerEl.classList.add("hit-effect");
-                    setTimeout(() => playerEl.classList.remove("hit-effect"), 300);
-
-                    player.x += (player.x < m.x ? -20 : 20);
-                    player.y += (player.y < m.y ? -20 : 20);
-
-                    if (player.power <= 0) {
-                        player.power = 0;
-                        triggerLose();
-                    }
-                }
-            });
-        }
-
-        function checkCollisions() {
-            // Ăn Chuối -> Được cộng 100 điểm sức mạnh
-            bananas.forEach(b => {
-                if (isColliding(player, b)) {
-                    player.power += BANANA_POWER_REWARD;
-                    player.bananaCount++;
-                    playSound(400, 800, 0.1, "sine");
-
-                    playerEl.classList.add("eat-effect");
-                    setTimeout(() => playerEl.classList.remove("eat-effect"), 300);
-
-                    const pos = randomPos(b.size);
-                    b.x = pos.x;
-                    b.y = pos.y;
-                    b.el.style.left = b.x + "px";
-                    b.el.style.top = b.y + "px";
-
-                    createSparks(player.x, player.y, "yellow");
-
-                    if (player.power >= WIN_POWER) triggerWin();
-                }
-            });
-
-            // Ăn Sting -> Tăng tốc
-            if (sting.active && isColliding(player, sting)) {
-                playSound(600, 1200, 0.2, "triangle");
-                player.boosted = true;
-                player.speed = player.baseSpeed * 1.8;
-                player.boostEndTime = Date.now() + 6000;
-                playerEl.classList.add("sting-boost");
-
-                sting.active = false;
-                stingEl.style.display = "none";
-                setTimeout(spawnSting, 12000);
-            }
-
-            // Chướng ngại vật
-            obstacles.forEach(o => {
-                if (isColliding(player, o)) {
-                    player.x += (player.x < o.x ? -4 : 4);
-                    player.y += (player.y < o.y ? -4 : 4);
-                }
-            });
-        }
-
-        function updateBoost() {
+            // Kiểm tra hiệu ứng Sting
             if (player.boosted && Date.now() > player.boostEndTime) {
                 player.boosted = false;
                 player.speed = player.baseSpeed;
                 playerEl.classList.remove("sting-boost");
             }
+
+            playerEl.style.left = player.x + "px";
+            playerEl.style.top = player.y + "px";
+        }
+
+        function updateBullets() {
+            const worldWidth = window.innerWidth * 3;
+            const worldHeight = window.innerHeight * 3;
+
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                const b = bullets[i];
+                b.x += b.vx;
+                b.y += b.vy;
+
+                // Xóa đạn khi bay ra khỏi bản đồ
+                if (b.x < 0 || b.x > worldWidth || b.y < 0 || b.y > worldHeight) {
+                    b.el.remove();
+                    bullets.splice(i, 1);
+                    continue;
+                }
+
+                b.el.style.left = b.x + "px";
+                b.el.style.top = b.y + "px";
+
+                // Kiểm tra va chạm với quái
+                for (let j = monsters.length - 1; j >= 0; j--) {
+                    const m = monsters[j];
+                    const hitDist = m.isBoss ? 55 : 35;
+                    if (Math.hypot(b.x - m.x, b.y - m.y) < hitDist) {
+                        // Tạo hiệu ứng nổ nhẹ
+                        createSpark(m.x, m.y);
+
+                        // Trừ máu quái theo Sức mạnh của người chơi
+                        m.hp -= player.power;
+                        const hpPercent = Math.max(0, (m.hp / m.maxHp) * 100);
+                        m.hpInner.style.width = hpPercent + "%";
+
+                        // Xóa đạn
+                        b.el.remove();
+                        bullets.splice(i, 1);
+
+                        // Quái chết
+                        if (m.hp <= 0) {
+                            m.el.remove();
+                            monsters.splice(j, 1);
+                            player.kills++;
+
+                            // Boss cho nhiều XP hơn
+                            const xpGain = m.isBoss ? MONSTER_XP_REWARD * 4 : MONSTER_XP_REWARD;
+                            addXp(xpGain);
+
+                            // Tạo lại quái thường
+                            if (!m.isBoss) {
+                                const monsterTypes = [{
+                                    icon: "🐍",
+                                    speed: 1.8 * MONSTER_SPEED_MULTIPLIER,
+                                    hp: 30,
+                                    maxHp: 30
+                                }, {
+                                    icon: "🐅",
+                                    speed: 2.2 * MONSTER_SPEED_MULTIPLIER,
+                                    hp: 60,
+                                    maxHp: 60
+                                }, {
+                                    icon: "🐊",
+                                    speed: 1.4 * MONSTER_SPEED_MULTIPLIER,
+                                    hp: 80,
+                                    maxHp: 80
+                                }, {
+                                    icon: "🐗",
+                                    speed: 2.0 * MONSTER_SPEED_MULTIPLIER,
+                                    hp: 50,
+                                    maxHp: 50
+                                }];
+                                spawnMonster(worldWidth, worldHeight, monsterTypes);
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+
+        function createSpark(x, y) {
+            const spark = document.createElement("div");
+            spark.className = "spark";
+            spark.style.background = "orange";
+            spark.style.left = x + "px";
+            spark.style.top = y + "px";
+            worldEl.appendChild(spark);
+            setTimeout(() => spark.remove(), 500);
+        }
+
+        function updateMonsters() {
+            monsters.forEach(m => {
+                const angle = Math.atan2(player.y - m.y, player.x - m.x);
+                m.x += Math.cos(angle) * m.speed;
+                m.y += Math.sin(angle) * m.speed;
+
+                m.el.style.left = m.x + "px";
+                m.el.style.top = m.y + "px";
+            });
+        }
+
+        function checkCollisions() {
+            const pCenter = {
+                x: player.x + player.size / 2,
+                y: player.y + player.size / 2
+            };
+
+            // 1. Va chạm với Chuối -> Cộng 50 điểm kinh nghiệm
+            for (let i = bananas.length - 1; i >= 0; i--) {
+                const b = bananas[i];
+                if (Math.hypot(pCenter.x - (b.x + 20), pCenter.y - (b.y + 20)) < 45) {
+                    b.el.remove();
+                    bananas.splice(i, 1);
+                    player.bananaCount++;
+
+                    // Lụm chuối cộng 50 điểm kinh nghiệm
+                    addXp(BANANA_XP_REWARD);
+
+                    // Hiệu ứng ăn chuối
+                    playerEl.classList.add("eat-effect");
+                    setTimeout(() => playerEl.classList.remove("eat-effect"), 400);
+
+                    // Tạo chuối mới
+                    const worldWidth = window.innerWidth * 3;
+                    const worldHeight = window.innerHeight * 3;
+                    spawnBanana(worldWidth, worldHeight);
+                }
+            }
+
+            // 2. Va chạm với Sting
+            if (stingItem.active) {
+                if (Math.hypot(pCenter.x - (stingItem.x + 23), pCenter.y - (stingItem.y + 23)) < 45) {
+                    stingItem.active = false;
+                    stingEl.style.display = "none";
+
+                    player.boosted = true;
+                    player.speed = player.baseSpeed * 1.8;
+                    player.boostEndTime = Date.now() + 8000; // Tăng tốc 8s
+                    playerEl.classList.add("sting-boost");
+
+                    // Tự động tạo Sting mới sau 15s
+                    setTimeout(() => {
+                        const worldWidth = window.innerWidth * 3;
+                        const worldHeight = window.innerHeight * 3;
+                        spawnSting(worldWidth, worldHeight);
+                    }, 15000);
+                }
+            }
+
+            // 3. Va chạm với Quái vật
+            monsters.forEach(m => {
+                const hitDist = m.isBoss ? 60 : 40;
+                if (Math.hypot(pCenter.x - (m.x + 25), pCenter.y - (m.y + 25)) < hitDist) {
+                    // Sát thương: Quái thường = 10, Boss = 20
+                    const damage = m.isBoss ? BOSS_ATTACK_DAMAGE : MONSTER_HP_DAMAGE;
+                    player.hp -= damage;
+
+                    playerEl.classList.add("hit-effect");
+                    setTimeout(() => playerEl.classList.remove("hit-effect"), 300);
+
+                    // Đẩy lùi quái một chút khi va chạm
+                    const angle = Math.atan2(m.y - player.y, m.x - player.x);
+                    m.x += Math.cos(angle) * 40;
+                    m.y += Math.sin(angle) * 40;
+
+                    if (player.hp <= 0) {
+                        player.hp = 0;
+                        endGame(false);
+                    }
+                }
+            });
+
+            // 4. Kiểm tra điều kiện thắng
+            if (player.power >= WIN_POWER) {
+                endGame(true);
+            }
+        }
+
+        function updateCamera() {
+            // Đặt nhân vật ở trung tâm màn hình
+            const camX = window.innerWidth / 2 - (player.x + player.size / 2);
+            const camY = window.innerHeight / 2 - (player.y + player.size / 2);
+            worldEl.style.transform = `translate3d(${camX}px, ${camY}px, 0)`;
         }
 
         function updateHUD() {
@@ -1351,95 +1735,41 @@
             hudSpeed.textContent = player.speed.toFixed(1);
             hudKills.textContent = player.kills;
 
-            const pct = Math.min(100, (player.power / WIN_POWER) * 100);
-            powerBar.style.width = pct + "%";
+            // Thanh Máu
+            hudHp.textContent = Math.round(player.hp);
+            hudMaxHp.textContent = Math.round(player.maxHp);
+            const hpPct = Math.max(0, Math.min(100, (player.hp / player.maxHp) * 100));
+            hpBar.style.width = hpPct + "%";
+
+            // Thanh Kinh Nghiệm (XP)
+            hudLevel.textContent = player.level;
+            hudXp.textContent = player.xp;
+            hudXpNeeded.textContent = player.xpNeeded;
+            const xpPct = Math.max(0, Math.min(100, (player.xp / player.xpNeeded) * 100));
+            xpBar.style.width = xpPct + "%";
+
+            // Thanh Sức mạnh hướng tới chiến thắng
+            const powerPct = Math.min(100, (player.power / WIN_POWER) * 100);
+            powerBar.style.width = powerPct + "%";
         }
 
-        function gameLoop() {
-            if (gameOver) return;
+        /* ---------- KẾT THÚC GAME ---------- */
+        function endGame(isWin) {
+            isGameOver = true;
+            saveScore(playerName, player.power, player.kills, player.level);
 
-            updatePlayer();
-            updateBullets();
-            updateMonsters();
-            checkCollisions();
-            updateBoost();
-            updateHUD();
+            if (isWin) {
+                overlayTitle.textContent = "🏆 BẠN ĐÃ THẮNG!";
+                overlayTitle.style.color = "#4caf6a";
+                overlayText.innerHTML = `Chúc mừng <b>${escapeHtml(playerName || "Vô danh")}</b>!<br>Bạn đã đạt ${player.power} Sức mạnh tối thượng và hạ gục ${player.kills} quái vật!`;
+            } else {
+                overlayTitle.textContent = "☠️ BẠN ĐÃ THUA!";
+                overlayTitle.style.color = "#ff3b3b";
+                overlayText.innerHTML = `Rất tiếc <b>${escapeHtml(playerName || "Vô danh")}</b>!<br>Bạn đã gục ngã ở Cấp độ ${player.level} với ${player.kills} điểm hạ gục.`;
+            }
 
-            requestAnimationFrame(gameLoop);
-        }
-
-        function triggerWin() {
-            gameOver = true;
-            saveScore(playerName, player.power); // Lưu điểm vào BXH
-            playSound(523, 1046, 0.4, "triangle");
-            overlayTitle.textContent = "🎉 CHIẾN THẮNG! 🎉";
-            overlayText.textContent = `Bạn đã xuất sắc đạt ${player.power} Sức mạnh và tiêu diệt ${player.kills} quái vật!`;
             overlay.style.display = "flex";
         }
-
-        function triggerLose() {
-            gameOver = true;
-            saveScore(playerName, player.power); // Lưu điểm vào BXH
-            playSound(200, 60, 0.5, "sawtooth");
-            overlayTitle.textContent = "💀 BẠN ĐÃ THẤT BẠI 💀";
-            overlayText.textContent = `Sức mạnh về 0. Điểm đạt được: ${player.power}. Tiêu diệt: ${player.kills} quái vật!`;
-            overlay.style.display = "flex";
-        }
-
-        function resetGame() {
-            gameOver = false;
-            player.x = 500;
-            player.y = 500;
-            player.power = 100;
-            player.bananaCount = 0;
-            player.kills = 0;
-            player.speed = player.baseSpeed;
-            player.boosted = false;
-            playerEl.classList.remove("sting-boost");
-
-            bulletsEl.innerHTML = "";
-            bullets.length = 0;
-
-            overlay.style.display = "none";
-            initEntities();
-            gameLoop();
-        }
-
-        /* ---------- EVENT LISTENERS ---------- */
-        btnPlay.addEventListener("click", () => {
-            getAudioCtx();
-            homeScreen.style.display = "none";
-            gameEl.style.display = "block";
-            gameStarted = true;
-            resetGame();
-        });
-
-        restartBtn.addEventListener("click", resetGame);
-
-        // Bảng Xếp Hạng Events
-        function openLeaderboard() {
-            renderLeaderboard();
-            leaderboardModal.style.display = "flex";
-        }
-        btnLeaderboardHome.addEventListener("click", openLeaderboard);
-        overlayLeaderboardBtn.addEventListener("click", openLeaderboard);
-        leaderboardCloseBtn.addEventListener("click", () => leaderboardModal.style.display = "none");
-
-        btnName.addEventListener("click", () => {
-            nameInput.value = playerName;
-            nameModal.style.display = "flex";
-        });
-
-        nameCloseBtn.addEventListener("click", () => nameModal.style.display = "none");
-        nameSaveBtn.addEventListener("click", () => {
-            playerName = nameInput.value.trim().slice(0, 16);
-            localStorage.setItem("monkeyPlayerName", playerName);
-            updateNamePreview();
-            nameModal.style.display = "none";
-        });
-
-        btnSettings.addEventListener("click", () => settingsModal.style.display = "flex");
-        settingsCloseBtn.addEventListener("click", () => settingsModal.style.display = "none");
     </script>
 </body>
 
