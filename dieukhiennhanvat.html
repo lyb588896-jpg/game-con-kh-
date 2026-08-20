@@ -1198,6 +1198,7 @@
         const keys = {};
         let touchJoystick = {
             active: false,
+            touchId: null, // ID của ngón tay đang điều khiển joystick, để phân biệt với ngón tay bấm nút bắn
             startX: 0,
             startY: 0,
             moveX: 0,
@@ -1568,10 +1569,50 @@
 
         /* ---------- BẮN ĐẠN ---------- */
         // Bắn đạn không tốn điểm sức mạnh, nhưng có thời gian hồi chiêu
-        shootBtn.onclick = fireBullet;
+        // GIỮ nút bắn để tự động bắn liên tục (mỗi khi hết hồi chiêu) -> có thể vừa cầm joystick di chuyển vừa bắn
+        let shootHoldTimer = null;
+
+        function startShootHold(e) {
+            if (e) e.preventDefault(); // Ngăn trình duyệt phát sinh thêm sự kiện click gây bắn đúp
+            fireBullet(); // Bắn ngay lần đầu khi vừa chạm/nhấn
+            if (shootHoldTimer) clearInterval(shootHoldTimer);
+            // Cứ mỗi 60ms kiểm tra, hễ hết hồi chiêu thì bắn tiếp, miễn đang giữ nút
+            shootHoldTimer = setInterval(fireBullet, 60);
+        }
+
+        function stopShootHold() {
+            if (shootHoldTimer) {
+                clearInterval(shootHoldTimer);
+                shootHoldTimer = null;
+            }
+        }
+
+        // Cảm ứng: giữ nút để bắn liên tục
+        shootBtn.addEventListener("touchstart", startShootHold, {
+            passive: false
+        });
+        shootBtn.addEventListener("touchend", stopShootHold);
+        shootBtn.addEventListener("touchcancel", stopShootHold);
+
+        // Chuột (dùng khi test trên máy tính): giữ nút để bắn liên tục
+        shootBtn.addEventListener("mousedown", startShootHold);
+        window.addEventListener("mouseup", stopShootHold);
+
+        // Giữ phím Space để bắn liên tục trên desktop
+        let spaceHeld = false;
         window.addEventListener("keydown", (e) => {
             if (e.code === "Space") {
-                fireBullet();
+                e.preventDefault();
+                if (!spaceHeld) {
+                    spaceHeld = true;
+                    startShootHold(null);
+                }
+            }
+        });
+        window.addEventListener("keyup", (e) => {
+            if (e.code === "Space") {
+                spaceHeld = false;
+                stopShootHold();
             }
         });
 
@@ -1659,28 +1700,48 @@
             keys[e.key] = false;
         });
 
-        // Touch Joystick Dynamic
+        // Touch Joystick Dynamic - hỗ trợ đa điểm chạm: một ngón điều khiển joystick, ngón khác bấm giữ nút bắn cùng lúc
         window.addEventListener("touchstart", (e) => {
             if (isGameOver || isGamePaused) return;
-            // Tránh kích hoạt khi bấm nút Shoot hoặc Modals
-            if (e.target.closest("#shootBtn") || e.target.closest(".hud") || e.target.closest(".modal-overlay")) return;
+            // Nếu joystick đã có ngón tay đang điều khiển rồi thì bỏ qua các ngón chạm mới (ví dụ ngón đang bấm nút bắn)
+            if (touchJoystick.active) return;
 
-            const touch = e.touches[0];
-            touchJoystick.active = true;
-            touchJoystick.startX = touch.clientX;
-            touchJoystick.startY = touch.clientY;
-            touchJoystick.moveX = 0;
-            touchJoystick.moveY = 0;
+            // Tìm ngón tay chạm hợp lệ đầu tiên (không phải trên nút Shoot, HUD, hoặc Modal)
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                const touch = e.changedTouches[i];
+                const target = document.elementFromPoint(touch.clientX, touch.clientY);
+                if (target && (target.closest("#shootBtn") || target.closest(".hud") || target.closest(".modal-overlay"))) {
+                    continue; // Ngón này đang chạm vùng khác (nút bắn/HUD/modal), không dùng cho joystick
+                }
 
-            joystickZone.style.left = touch.clientX + "px";
-            joystickZone.style.top = touch.clientY + "px";
-            joystickZone.style.display = "block";
-            joystickStick.style.transform = `translate(-50%, -50%)`;
+                touchJoystick.active = true;
+                touchJoystick.touchId = touch.identifier;
+                touchJoystick.startX = touch.clientX;
+                touchJoystick.startY = touch.clientY;
+                touchJoystick.moveX = 0;
+                touchJoystick.moveY = 0;
+
+                joystickZone.style.left = touch.clientX + "px";
+                joystickZone.style.top = touch.clientY + "px";
+                joystickZone.style.display = "block";
+                joystickStick.style.transform = `translate(-50%, -50%)`;
+                break;
+            }
         });
 
         window.addEventListener("touchmove", (e) => {
             if (!touchJoystick.active) return;
-            const touch = e.touches[0];
+
+            // Tìm đúng ngón tay đang điều khiển joystick trong danh sách các điểm chạm thay đổi
+            let touch = null;
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                if (e.changedTouches[i].identifier === touchJoystick.touchId) {
+                    touch = e.changedTouches[i];
+                    break;
+                }
+            }
+            if (!touch) return; // Ngón tay thay đổi lần này không phải ngón điều khiển joystick
+
             const dx = touch.clientX - touchJoystick.startX;
             const dy = touch.clientY - touchJoystick.startY;
             const dist = Math.hypot(dx, dy);
@@ -1699,8 +1760,19 @@
             touchJoystick.moveY = stickY / maxRadius;
         });
 
-        const endTouch = () => {
+        const endTouch = (e) => {
+            // Chỉ dừng joystick nếu đúng ngón tay đang điều khiển nó vừa nhấc lên
+            let released = false;
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                if (e.changedTouches[i].identifier === touchJoystick.touchId) {
+                    released = true;
+                    break;
+                }
+            }
+            if (!released) return;
+
             touchJoystick.active = false;
+            touchJoystick.touchId = null;
             joystickZone.style.display = "none";
         };
         window.addEventListener("touchend", endTouch);
