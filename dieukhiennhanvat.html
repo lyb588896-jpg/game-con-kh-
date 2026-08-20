@@ -59,6 +59,38 @@
             transition: filter .2s;
         }
         
+        #statusIcon {
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 22px;
+            display: none;
+            z-index: 12;
+            animation: statusFloat .6s infinite alternate;
+            filter: drop-shadow(0 2px 3px rgba(0, 0, 0, .5));
+        }
+        
+        @keyframes statusFloat {
+            from {
+                transform: translateX(-50%) translateY(0);
+            }
+            to {
+                transform: translateX(-50%) translateY(-6px);
+            }
+        }
+        
+        .stunned .avatar {
+            border-color: #ffd400;
+            box-shadow: 0 0 16px 4px rgba(255, 212, 0, .8);
+            filter: grayscale(.5) brightness(.85);
+        }
+        
+        .poisoned .avatar {
+            border-color: #7cff00;
+            box-shadow: 0 0 14px 4px rgba(124, 255, 0, .7);
+        }
+        
         .avatar {
             display: block;
             width: 90px;
@@ -243,6 +275,31 @@
         .boss-monster .monster-hp-inner {
             background: linear-gradient(90deg, gold, #ff3b3b);
         }
+        /* Thanh giáp ảo của Vua Heo, hiển thị phía trên thanh máu khi giáp còn hoạt động */
+        
+        .shield-bar-outer {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 70px;
+            height: 6px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid #bfe9ff;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        
+        .shield-bar-inner {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg, #4fc3f7, #0288d1);
+            transition: width .2s;
+        }
+        
+        .boss-monster.shield-active {
+            filter: drop-shadow(0 4px 6px rgba(0, 0, 0, .5)) drop-shadow(0 0 22px rgba(79, 195, 247, .9));
+        }
         
         @keyframes monsterWiggle {
             from {
@@ -272,6 +329,75 @@
                 transform: scale(3.2);
                 opacity: 0;
             }
+        }
+        /* ===================== HIỆU ỨNG GẦM CỦA HỔ VUA ===================== */
+        
+        .roar-ring {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            margin-left: -25px;
+            margin-top: -25px;
+            border: 5px solid rgba(255, 90, 0, .9);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9;
+            animation: roarExpand .7s ease-out forwards;
+        }
+        
+        @keyframes roarExpand {
+            from {
+                transform: scale(.3);
+                opacity: 1;
+            }
+            to {
+                transform: scale(7);
+                opacity: 0;
+            }
+        }
+        /* ===================== HIỆU ỨNG LỚP GIÁP CỦA VUA HEO ===================== */
+        
+        .shield-spark {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9;
+            animation: sparkGrow .4s ease forwards;
+        }
+        
+        .shield-break-ring {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            margin-left: -30px;
+            margin-top: -30px;
+            border: 5px solid rgba(79, 195, 247, .95);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9;
+            animation: roarExpand .6s ease-out forwards;
+        }
+        /* ===================== BANNER THÔNG BÁO BOSS ===================== */
+        
+        #bossAnnounce {
+            position: fixed;
+            top: 14%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, .78);
+            color: #fff;
+            padding: 12px 22px;
+            border-radius: 14px;
+            font-size: clamp(14px, 4vw, 19px);
+            font-weight: bold;
+            z-index: 60;
+            display: none;
+            text-align: center;
+            max-width: 88vw;
+            box-shadow: 0 4px 18px rgba(0, 0, 0, .45);
+            border: 2px solid rgba(255, 90, 0, .8);
         }
         /* ===================== HUD ===================== */
         
@@ -420,11 +546,28 @@
             touch-action: manipulation;
             user-select: none;
             transition: transform 0.08s ease;
+            overflow: hidden;
         }
         
         #shootBtn:active {
             transform: scale(0.88);
             background: radial-gradient(circle, #ff1744, #b71c1c);
+        }
+        
+        #shootBtn.on-cooldown {
+            cursor: default;
+        }
+        
+        #shootBtn .cooldown-overlay {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.55);
+            width: 100%;
+            height: 0%;
+            pointer-events: none;
+            transition: height 0.05s linear;
         }
         /* ===================== JOYSTICK ===================== */
         
@@ -767,9 +910,13 @@
 
             <!-- Nhân vật Khỉ -->
             <div id="player">
+                <div id="statusIcon"></div>
                 <img class="avatar" src="monkey-3614f.webp" alt="khỉ">
             </div>
         </div>
+
+        <!-- Banner thông báo Boss xuất hiện -->
+        <div id="bossAnnounce"></div>
 
         <!-- HUD UI -->
         <div class="hud">
@@ -789,7 +936,9 @@
         </div>
 
         <!-- Nút Bắn -->
-        <div id="shootBtn">🔥</div>
+        <div id="shootBtn">🔥
+            <div class="cooldown-overlay" id="cooldownOverlay"></div>
+        </div>
 
         <!-- Dynamic Joystick Zone -->
         <div id="joystick-zone">
@@ -819,6 +968,9 @@
         const monstersEl = document.getElementById("monsters");
         const bulletsEl = document.getElementById("bullets");
         const stingEl = document.getElementById("sting");
+        const statusIconEl = document.getElementById("statusIcon");
+        const bossAnnounceEl = document.getElementById("bossAnnounce");
+        let bossAnnounceTimeout = null;
 
         const hudBanana = document.getElementById("hudBanana");
         const hudPower = document.getElementById("hudPower");
@@ -834,6 +986,7 @@
         const xpBar = document.getElementById("xpBar");
 
         const shootBtn = document.getElementById("shootBtn");
+        const cooldownOverlay = document.getElementById("cooldownOverlay");
         const overlay = document.getElementById("overlay");
         const overlayTitle = document.getElementById("overlayTitle");
         const overlayText = document.getElementById("overlayText");
@@ -891,11 +1044,15 @@
             kills: 0,
             boosted: false,
             boostEndTime: 0,
-            autoAim: false, // Tự động nhắm quái (kỹ năng)
+            autoAim: true, // Tự động nhắm quái - bật mặc định để đảm bảo tỉ lệ bắn trúng cao
             bulletSpeedMultiplier: 1, // Tăng thêm khi trùng thẻ Tự Động Nhắm
             skillCounts: {}, // Đếm số lần đã chọn từng loại thẻ kỹ năng
             lastDirX: 1, // Hướng nhìn mặc định
-            lastDirY: 0
+            lastDirY: 0,
+            stunned: false, // Đang bị choáng (do Hổ Vua gầm) hay không
+            stunEndTime: 0, // Thời điểm hết choáng
+            poisonEndTime: 0, // Thời điểm hết nhiễm độc (do Rắn Độc Vua)
+            lastPoisonTick: 0 // Thời điểm mất máu do độc gần nhất
         };
 
         const WIN_POWER = 10000;
@@ -907,10 +1064,41 @@
         const LEVEL_UP_POWER = 5; // Mỗi lần lên cấp cộng thêm 5 điểm sức mạnh
         const BOSS_INTERVAL = 5; // Boss xuất hiện định kỳ mỗi 5 cấp (Cấp 5, 10, 15, 20...)
         const BASE_BOSS_HP = 500; // Máu Boss ở đợt đầu tiên (Cấp 5)
-        const BOSS_HP_STEP = 500; // Mỗi đợt Boss tiếp theo tăng thêm 500 máu
+        const BOSS_HP_STEP = 500; // Mỗi đợt Boss tiếp theo tăng thêm 500 máu                          
         const BOSS_ATTACK_DAMAGE = 20; // Sức mạnh của Boss là 20
         const SKILL_STACK_BONUS = 0.25;
         const MONSTER_SPEED_MULTIPLIER = isMobile ? 0.65 : 1;
+        const FIRE_COOLDOWN_MS = 600; // Thời gian hồi chiêu giữa 2 lần bắn cầu lửa
+
+        // Danh sách các loại Boss, xoay vòng theo từng đợt xuất hiện (Cấp 5 = đợt 1, Cấp 10 = đợt 2, Cấp 15 = đợt 3 quay lại đợt 1...)
+        const BOSS_TYPES = [{
+            name: "Hổ Vua",
+            icon: "🐯👑",
+            ability: "roar", // Gầm lên làm choáng người chơi
+            roarCooldownMs: 10000, // Hồi chiêu kỹ năng gầm: 10 giây
+            roarStunMs: 1000, // Làm choáng người chơi 1 giây
+            roarRange: 500 // Chỉ gầm khi người chơi trong phạm vi này
+        }, {
+            name: "Rắn Độc Vua",
+            icon: "🐍👑",
+            ability: "poison", // Cắn/chạm gây nhiễm độc theo thời gian
+            poisonDurationMs: 5000, // Nhiễm độc kéo dài 5 giây
+            poisonTickMs: 1000, // Mỗi giây mất máu 1 lần
+            poisonDamagePerTick: 1 // Mỗi lần mất 1 máu
+        }, {
+            name: "Vua Heo",
+            icon: "🐗👑",
+            ability: "shield", // Lớp giáp ảo ngăn sát thương từ người chơi
+            shieldMaxHp: 200, // Giáp có 200 máu riêng, đỡ hết sát thương khi còn giáp
+            shieldCooldownMs: 7000 // Sau khi giáp vỡ, 7 giây sau giáp sẽ hồi lại
+        }];
+
+        // Hằng số dùng chung cho hiệu ứng nhiễm độc trên người chơi (khớp thông số của Rắn Độc Vua)
+        const POISON_TICK_MS = BOSS_TYPES[1].poisonTickMs;
+        const POISON_DAMAGE_PER_TICK = BOSS_TYPES[1].poisonDamagePerTick;
+
+        let lastShotTime = 0; // Thời điểm bắn gần nhất
+        let cooldownRafId = null; // ID của vòng lặp animation cập nhật thanh hồi chiêu
 
         // Danh sách thẻ kỹ năng có thể xuất hiện khi lên cấp
         const SKILL_CARDS = [{
@@ -956,13 +1144,11 @@
             id: 'autoaim',
             weight: 15,
             icon: '🎯',
-            title: 'Tự Động Nhắm',
-            desc: 'Đạn tự động bay về quái gần nhất (trùng thẻ +25% tốc độ đạn)',
+            title: 'Tăng Tốc Đạn Bám Đuổi',
+            desc: 'Đạn tự động bay về quái gần nhất luôn được bật sẵn. Thẻ này cộng thêm 25% tốc độ đạn (dồn khi trùng thẻ)',
             apply: (count) => {
                 player.autoAim = true;
-                if (count > 0) {
-                    player.bulletSpeedMultiplier += SKILL_STACK_BONUS;
-                }
+                player.bulletSpeedMultiplier += SKILL_STACK_BONUS;
             }
         }, {
             id: 'maxhp10',
@@ -1116,15 +1302,26 @@
             player.kills = 0;
             player.boosted = false;
             player.speed = player.baseSpeed;
-            player.autoAim = false;
+            player.autoAim = true; // Luôn bật tự động nhắm để đảm bảo tỉ lệ bắn trúng quái cao
             player.bulletSpeedMultiplier = 1;
             player.skillCounts = {};
             player.lastDirX = 1;
             player.lastDirY = 0;
+            player.stunned = false;
+            player.stunEndTime = 0;
+            player.poisonEndTime = 0;
+            player.lastPoisonTick = 0;
+            playerEl.classList.remove("stunned", "poisoned");
+            statusIconEl.style.display = "none";
+            bossAnnounceEl.style.display = "none";
+            if (bossAnnounceTimeout) clearTimeout(bossAnnounceTimeout);
 
             isGameOver = false;
             isGamePaused = false;
             bullets = [];
+            lastShotTime = 0;
+            shootBtn.classList.remove("on-cooldown");
+            cooldownOverlay.style.height = "0%";
 
             generateWorld();
             updateHUD();
@@ -1256,7 +1453,7 @@
             });
         }
 
-        /* Spawn Boss Monster xuất hiện mỗi 5 cấp */
+        /* Spawn Boss Monster xuất hiện mỗi 5 cấp, xoay vòng qua các loại Boss trong BOSS_TYPES */
         function spawnBossMonster(w, h, level) {
             const x = Math.random() * (w - 200) + 100;
             const y = Math.random() * (h - 200) + 100;
@@ -1264,7 +1461,10 @@
             // Tính số đợt Boss dựa theo cấp độ (Cấp 5 = đợt 1, Cấp 10 = đợt 2, Cấp 15 = đợt 3, ...)
             const bossWave = Math.floor(level / BOSS_INTERVAL);
             const bossHp = BASE_BOSS_HP + (bossWave - 1) * BOSS_HP_STEP;
-            const bossIcon = "🦍"; // Khỉ Đột khổng lồ làm Boss
+
+            // Chọn loại Boss theo đợt: đợt 1 = Hổ Vua, đợt 2 = Rắn Độc Vua, đợt 3 quay lại Hổ Vua...
+            const bossType = BOSS_TYPES[(bossWave - 1) % BOSS_TYPES.length];
+            const bossIcon = bossType.icon;
 
             const el = document.createElement("div");
             el.className = "monster boss-monster";
@@ -1274,9 +1474,21 @@
             const hpBarInner = document.createElement("div");
             hpBarInner.className = "monster-hp-inner";
             hpBarOuter.appendChild(hpBarInner);
+            el.appendChild(hpBarOuter);
+
+            // Nếu là Vua Heo: thêm thanh giáp ảo phía trên thanh máu
+            let shieldBarInner = null;
+            if (bossType.ability === "shield") {
+                const shieldBarOuter = document.createElement("div");
+                shieldBarOuter.className = "shield-bar-outer";
+                shieldBarInner = document.createElement("div");
+                shieldBarInner.className = "shield-bar-inner";
+                shieldBarOuter.appendChild(shieldBarInner);
+                el.appendChild(shieldBarOuter);
+                el.classList.add("shield-active");
+            }
 
             const textNode = document.createTextNode(bossIcon);
-            el.appendChild(hpBarOuter);
             el.appendChild(textNode);
 
             el.style.left = x + "px";
@@ -1286,14 +1498,59 @@
             monsters.push({
                 x,
                 y,
-                speed: 1.6 * MONSTER_SPEED_MULTIPLIER,
+                speed: 1.5 * MONSTER_SPEED_MULTIPLIER,
                 hp: bossHp,
                 maxHp: bossHp,
                 icon: bossIcon,
                 el,
                 hpInner: hpBarInner,
-                isBoss: true
+                isBoss: true,
+                bossName: bossType.name,
+                ability: bossType.ability, // 'roar' (Hổ Vua), 'poison' (Rắn Độc Vua) hoặc 'shield' (Vua Heo)
+                // Thông số kỹ năng Gầm (Hổ Vua)
+                roarCooldownMs: bossType.roarCooldownMs,
+                roarStunMs: bossType.roarStunMs,
+                roarRange: bossType.roarRange,
+                lastRoarTime: Date.now(), // Cho người chơi khoảng nghỉ trước lần gầm đầu tiên
+                // Thông số kỹ năng Nọc Độc (Rắn Độc Vua)
+                poisonDurationMs: bossType.poisonDurationMs,
+                poisonTickMs: bossType.poisonTickMs,
+                poisonDamagePerTick: bossType.poisonDamagePerTick,
+                // Thông số kỹ năng Lớp Giáp Ảo (Vua Heo)
+                shieldMaxHp: bossType.shieldMaxHp,
+                shieldHp: bossType.shieldMaxHp,
+                shieldActive: bossType.ability === "shield", // Giáp bật sẵn khi vừa xuất hiện
+                shieldCooldownMs: bossType.shieldCooldownMs,
+                shieldBrokenTime: 0, // Thời điểm giáp vỡ, dùng để tính hồi chiêu
+                shieldInner: shieldBarInner // Tham chiếu DOM thanh giáp để cập nhật độ dài
             });
+
+            // Thông báo Boss xuất hiện
+            let abilityHint = "";
+            if (bossType.ability === "roar") abilityHint = "Cẩn thận đòn Gầm gây choáng!";
+            else if (bossType.ability === "poison") abilityHint = "Cẩn thận Nọc Độc gây sát thương theo thời gian!";
+            else if (bossType.ability === "shield") abilityHint = "Có Lớp Giáp Ảo chặn sát thương, hãy phá giáp trước!";
+            announceBoss(`⚠️ ${bossType.name} xuất hiện! ${abilityHint}`);
+        }
+
+        /* Hiển thị banner thông báo Boss xuất hiện trong vài giây */
+        function announceBoss(text) {
+            bossAnnounceEl.textContent = text;
+            bossAnnounceEl.style.display = "block";
+            if (bossAnnounceTimeout) clearTimeout(bossAnnounceTimeout);
+            bossAnnounceTimeout = setTimeout(() => {
+                bossAnnounceEl.style.display = "none";
+            }, 3000);
+        }
+
+        /* Hiệu ứng vòng sóng khi Hổ Vua gầm */
+        function showRoarEffect(x, y) {
+            const ring = document.createElement("div");
+            ring.className = "roar-ring";
+            ring.style.left = x + "px";
+            ring.style.top = y + "px";
+            worldEl.appendChild(ring);
+            setTimeout(() => ring.remove(), 700);
         }
 
         function spawnSting(w, h) {
@@ -1310,7 +1567,7 @@
         }
 
         /* ---------- BẮN ĐẠN ---------- */
-        // Bắn đạn không tốn điểm sức mạnh
+        // Bắn đạn không tốn điểm sức mạnh, nhưng có thời gian hồi chiêu
         shootBtn.onclick = fireBullet;
         window.addEventListener("keydown", (e) => {
             if (e.code === "Space") {
@@ -1320,11 +1577,19 @@
 
         function fireBullet() {
             if (isGameOver || isGamePaused) return;
+            if (player.stunned) return; // Đang bị choáng thì không thể bắn
+
+            // Kiểm tra thời gian hồi chiêu
+            const now = Date.now();
+            if (now - lastShotTime < FIRE_COOLDOWN_MS) return;
+            lastShotTime = now;
+            startCooldownAnimation();
 
             let dirX = player.lastDirX;
             let dirY = player.lastDirY;
+            let lockedTarget = null;
 
-            // Kỹ năng Tự Động Nhắm: Tự động tìm quái gần nhất
+            // Tự Động Nhắm: khóa mục tiêu là quái gần nhất, đạn sẽ tự bám đuổi mục tiêu này
             if (player.autoAim && monsters.length > 0) {
                 let nearest = null;
                 let minDist = Infinity;
@@ -1336,6 +1601,7 @@
                     }
                 });
                 if (nearest) {
+                    lockedTarget = nearest;
                     const angle = Math.atan2(nearest.y - player.y, nearest.x - player.x);
                     dirX = Math.cos(angle);
                     dirY = Math.sin(angle);
@@ -1359,8 +1625,30 @@
                 y: bulletY,
                 vx: dirX * speed,
                 vy: dirY * speed,
+                speed: speed, // Tốc độ đạn, dùng để tính lại hướng khi bám đuổi mục tiêu
+                target: lockedTarget, // Quái đang bị khóa mục tiêu (đạn sẽ tự bám đuổi)
                 el
             });
+        }
+
+        /* Hiển thị lớp phủ hồi chiêu chạy dần trên nút bắn */
+        function startCooldownAnimation() {
+            shootBtn.classList.add("on-cooldown");
+            if (cooldownRafId) cancelAnimationFrame(cooldownRafId);
+
+            function step() {
+                const elapsed = Date.now() - lastShotTime;
+                const pct = Math.min(1, elapsed / FIRE_COOLDOWN_MS);
+                cooldownOverlay.style.height = ((1 - pct) * 100) + "%";
+
+                if (pct < 1) {
+                    cooldownRafId = requestAnimationFrame(step);
+                } else {
+                    cooldownRafId = null;
+                    shootBtn.classList.remove("on-cooldown");
+                }
+            }
+            step();
         }
 
         /* ---------- INPUT CONTROLS ---------- */
@@ -1487,6 +1775,7 @@
             if (isGameOver) return;
 
             if (!isGamePaused) {
+                updateStatusEffects();
                 updatePlayerPosition();
                 updateBullets();
                 updateMonsters();
@@ -1498,18 +1787,57 @@
             requestAnimationFrame(gameLoop);
         }
 
+        /* Xử lý trạng thái choáng (Hổ Vua) và nhiễm độc (Rắn Độc Vua) mỗi khung hình */
+        function updateStatusEffects() {
+            const now = Date.now();
+
+            // Hết choáng
+            if (player.stunned && now >= player.stunEndTime) {
+                player.stunned = false;
+                playerEl.classList.remove("stunned");
+            }
+
+            // Nhiễm độc: mỗi giây mất 1 máu, kéo dài cho đến khi hết poisonEndTime
+            if (player.poisonEndTime > now) {
+                if (now - player.lastPoisonTick >= POISON_TICK_MS) {
+                    player.lastPoisonTick = now;
+                    player.hp -= POISON_DAMAGE_PER_TICK;
+                    if (player.hp <= 0) {
+                        player.hp = 0;
+                        endGame(false);
+                    }
+                }
+            } else {
+                playerEl.classList.remove("poisoned");
+            }
+
+            // Biểu tượng trạng thái phía trên đầu nhân vật
+            if (player.stunned) {
+                statusIconEl.textContent = "😵";
+                statusIconEl.style.display = "block";
+            } else if (player.poisonEndTime > now) {
+                statusIconEl.textContent = "☠️";
+                statusIconEl.style.display = "block";
+            } else {
+                statusIconEl.style.display = "none";
+            }
+        }
+
         function updatePlayerPosition() {
             let dx = 0;
             let dy = 0;
 
-            if (keys["ArrowUp"] || keys["w"] || keys["W"]) dy -= 1;
-            if (keys["ArrowDown"] || keys["s"] || keys["S"]) dy += 1;
-            if (keys["ArrowLeft"] || keys["a"] || keys["A"]) dx -= 1;
-            if (keys["ArrowRight"] || keys["d"] || keys["D"]) dx += 1;
+            // Đang bị choáng (Hổ Vua gầm) -> không nhận input di chuyển
+            if (!player.stunned) {
+                if (keys["ArrowUp"] || keys["w"] || keys["W"]) dy -= 1;
+                if (keys["ArrowDown"] || keys["s"] || keys["S"]) dy += 1;
+                if (keys["ArrowLeft"] || keys["a"] || keys["A"]) dx -= 1;
+                if (keys["ArrowRight"] || keys["d"] || keys["D"]) dx += 1;
 
-            if (touchJoystick.active) {
-                dx = touchJoystick.moveX;
-                dy = touchJoystick.moveY;
+                if (touchJoystick.active) {
+                    dx = touchJoystick.moveX;
+                    dy = touchJoystick.moveY;
+                }
             }
 
             // Chuẩn hóa vector di chuyển
@@ -1552,6 +1880,18 @@
 
             for (let i = bullets.length - 1; i >= 0; i--) {
                 const b = bullets[i];
+
+                // Đạn bám đuổi (homing): nếu còn khóa mục tiêu và mục tiêu vẫn còn sống,
+                // tính lại hướng bay về phía vị trí hiện tại của mục tiêu mỗi khung hình
+                // -> đảm bảo tỉ lệ bắn trúng gần như tuyệt đối
+                if (b.target && monsters.indexOf(b.target) !== -1) {
+                    const angle = Math.atan2(b.target.y - b.y, b.target.x - b.x);
+                    b.vx = Math.cos(angle) * b.speed;
+                    b.vy = Math.sin(angle) * b.speed;
+                } else {
+                    b.target = null;
+                }
+
                 b.x += b.vx;
                 b.y += b.vy;
 
@@ -1570,6 +1910,31 @@
                     const m = monsters[j];
                     const hitDist = m.isBoss ? 55 : 35;
                     if (Math.hypot(b.x - m.x, b.y - m.y) < hitDist) {
+                        // Lớp Giáp Ảo của Vua Heo: nếu giáp còn hoạt động, sát thương bị giáp hấp thụ
+                        // hoàn toàn thay vì trừ vào máu Boss
+                        if (m.isBoss && m.ability === "shield" && m.shieldActive && m.shieldHp > 0) {
+                            createShieldSpark(m.x, m.y);
+                            m.shieldHp -= player.power;
+
+                            if (m.shieldHp <= 0) {
+                                // Giáp vỡ: Boss lộ ra, bắt đầu đếm giờ hồi giáp
+                                m.shieldHp = 0;
+                                m.shieldActive = false;
+                                m.shieldBrokenTime = Date.now();
+                                m.el.classList.remove("shield-active");
+                                showShieldBreakEffect(m.x, m.y);
+                            }
+                            if (m.shieldInner) {
+                                const shieldPercent = Math.max(0, (m.shieldHp / m.shieldMaxHp) * 100);
+                                m.shieldInner.style.width = shieldPercent + "%";
+                            }
+
+                            // Xóa đạn (đạn bị giáp chặn lại, không gây sát thương lên máu Boss)
+                            b.el.remove();
+                            bullets.splice(i, 1);
+                            break;
+                        }
+
                         // Tạo hiệu ứng nổ nhẹ
                         createSpark(m.x, m.y);
 
@@ -1634,6 +1999,27 @@
             setTimeout(() => spark.remove(), 500);
         }
 
+        /* Hiệu ứng lóe sáng xanh khi đạn bị Lớp Giáp Ảo của Vua Heo chặn lại */
+        function createShieldSpark(x, y) {
+            const spark = document.createElement("div");
+            spark.className = "shield-spark";
+            spark.style.background = "#4fc3f7";
+            spark.style.left = x + "px";
+            spark.style.top = y + "px";
+            worldEl.appendChild(spark);
+            setTimeout(() => spark.remove(), 400);
+        }
+
+        /* Hiệu ứng vòng sóng xanh khi Lớp Giáp Ảo của Vua Heo bị phá vỡ */
+        function showShieldBreakEffect(x, y) {
+            const ring = document.createElement("div");
+            ring.className = "shield-break-ring";
+            ring.style.left = x + "px";
+            ring.style.top = y + "px";
+            worldEl.appendChild(ring);
+            setTimeout(() => ring.remove(), 600);
+        }
+
         function updateMonsters() {
             monsters.forEach(m => {
                 const angle = Math.atan2(player.y - m.y, player.x - m.x);
@@ -1642,6 +2028,30 @@
 
                 m.el.style.left = m.x + "px";
                 m.el.style.top = m.y + "px";
+
+                // Kỹ năng Gầm của Hổ Vua: làm choáng người chơi khi trong tầm và đã hết hồi chiêu
+                if (m.isBoss && m.ability === "roar") {
+                    const now = Date.now();
+                    const dist = Math.hypot(player.x - m.x, player.y - m.y);
+                    if (dist <= m.roarRange && now - m.lastRoarTime >= m.roarCooldownMs) {
+                        m.lastRoarTime = now;
+                        player.stunned = true;
+                        player.stunEndTime = now + m.roarStunMs;
+                        playerEl.classList.add("stunned");
+                        showRoarEffect(m.x, m.y);
+                    }
+                }
+
+                // Kỹ năng Lớp Giáp Ảo của Vua Heo: sau khi vỡ, giáp tự hồi lại sau thời gian hồi chiêu
+                if (m.isBoss && m.ability === "shield" && !m.shieldActive) {
+                    const now = Date.now();
+                    if (now - m.shieldBrokenTime >= m.shieldCooldownMs) {
+                        m.shieldActive = true;
+                        m.shieldHp = m.shieldMaxHp;
+                        m.el.classList.add("shield-active");
+                        if (m.shieldInner) m.shieldInner.style.width = "100%";
+                    }
+                }
             });
         }
 
@@ -1700,6 +2110,16 @@
                     // Sát thương: Quái thường = 10, Boss = 20
                     const damage = m.isBoss ? BOSS_ATTACK_DAMAGE : MONSTER_HP_DAMAGE;
                     player.hp -= damage;
+
+                    // Kỹ năng Nọc Độc của Rắn Độc Vua: gây nhiễm độc, mất 1 máu mỗi giây trong 5 giây
+                    if (m.isBoss && m.ability === "poison") {
+                        const now = Date.now();
+                        player.poisonEndTime = now + m.poisonDurationMs;
+                        if (player.lastPoisonTick === 0 || player.lastPoisonTick < now - m.poisonTickMs) {
+                            player.lastPoisonTick = now;
+                        }
+                        playerEl.classList.add("poisoned");
+                    }
 
                     playerEl.classList.add("hit-effect");
                     setTimeout(() => playerEl.classList.remove("hit-effect"), 300);
@@ -1765,7 +2185,7 @@
             } else {
                 overlayTitle.textContent = "☠️ BẠN ĐÃ THUA!";
                 overlayTitle.style.color = "#ff3b3b";
-                overlayText.innerHTML = `Rất tiếc <b>${escapeHtml(playerName || "Vô danh")}</b>!<br>Bạn đã gục ngã ở Cấp độ ${player.level} với ${player.kills} điểm hạ gục.`;
+                overlayText.innerHTML = `rất tiếc <b>${escapeHtml(playerName || "Vô danh")}</b>!<br>Bạn đã gục ngã ở Cấp độ ${player.level} với ${player.kills} điểm hạ gục.`;
             }
 
             overlay.style.display = "flex";
